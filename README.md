@@ -51,10 +51,7 @@ docker run -p 5173:5173 -v $(pwd):/app restaurant-app-dev
 
 ## API Integration
 
-The application fetches menu data from:
-```
-https://097zxtivqd.execute-api.ca-central-1.amazonaws.com/PROD/getMenuItem
-```
+The application fetches menu data from an API that communicates with a DynamoDB database.
 
 Expected API response format:
 ```json
