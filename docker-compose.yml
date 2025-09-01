@@ -1,16 +1,58 @@
 version: '3.8'
 
 services:
-  restaurant-app:
+  # First instance of your restaurant app
+  restaurant-app-1:
     build:
       context: .
       dockerfile: Dockerfile
-    ports:
-      - "3000:80"
+      args:
+        - VITE_API_URL_MENU=${VITE_API_URL_MENU}
+        - VITE_API_KEY=${VITE_API_KEY}
+        - VITE_SEND_ORDER_URL=${VITE_SEND_ORDER_URL}
+        - VITE_SAVE_ORDER_URL=${VITE_SAVE_ORDER_URL}
     environment:
       - NODE_ENV=production
     restart: unless-stopped
-    
+    networks:
+      - restaurant-network
+    # No external ports - only accessible through nginx
+    expose:
+      - "80"
+
+  # Second instance of your restaurant app
+  restaurant-app-2:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        - VITE_API_URL_MENU=${VITE_API_URL_MENU}
+        - VITE_API_KEY=${VITE_API_KEY}
+        - VITE_SEND_ORDER_URL=${VITE_SEND_ORDER_URL}
+        - VITE_SAVE_ORDER_URL=${VITE_SAVE_ORDER_URL}
+    environment:
+      - NODE_ENV=production
+    restart: unless-stopped
+    networks:
+      - restaurant-network
+    # No external ports - only accessible through nginx
+    expose:
+      - "80"
+
+  # Nginx reverse proxy and load balancer
+  nginx-proxy:
+    image: nginx:alpine
+    ports:
+      - "80:80"  # Expose port 80 to your public IP
+    volumes:
+      - ./nginx-load-balancer.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      - restaurant-app-1
+      - restaurant-app-2
+    restart: unless-stopped
+    networks:
+      - restaurant-network
+
   # Optional: Add a development service
   restaurant-app-dev:
     build:
@@ -21,7 +63,15 @@ services:
     volumes:
       - .:/app
       - /app/node_modules
+    env_file:
+      - .env
     environment:
       - NODE_ENV=development
     profiles:
       - dev
+    networks:
+      - restaurant-network
+
+networks:
+  restaurant-network:
+    driver: bridge

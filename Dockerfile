@@ -6,6 +6,25 @@ FROM node:18-alpine AS builder
 # Set working directory
 WORKDIR /app
 
+# Accept build arguments for environment variables
+ARG VITE_API_URL_MENU
+ARG VITE_API_KEY
+ARG VITE_SEND_ORDER_URL
+ARG VITE_SAVE_ORDER_URL
+
+# Set them as environment variables for the build process
+ENV VITE_API_URL_MENU=$VITE_API_URL_MENU
+ENV VITE_API_KEY=$VITE_API_KEY
+ENV VITE_SEND_ORDER_URL=$VITE_SEND_ORDER_URL
+ENV VITE_SAVE_ORDER_URL=$VITE_SAVE_ORDER_URL
+
+# Debug: Print environment variables during build (optional - remove in production)
+RUN echo "Build-time environment variables:"
+RUN echo "VITE_API_URL_MENU: $VITE_API_URL_MENU"
+RUN echo "VITE_API_KEY: $VITE_API_KEY"
+RUN echo "VITE_SEND_ORDER_URL: $VITE_SEND_ORDER_URL"
+RUN echo "VITE_SAVE_ORDER_URL: $VITE_SAVE_ORDER_URL"
+
 # Install dependencies including devDependencies
 COPY package.json package-lock.json* ./
 RUN npm install

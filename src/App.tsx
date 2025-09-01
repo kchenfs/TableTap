@@ -21,6 +21,8 @@ const queryClient = new QueryClient({
   },
 });
 
+
+
 function MenuApp() {
   const { MenuItems, isError, isPending, error } = useMenu();
   const [cart, setCart] = useState<CartItem[]>([]);
@@ -96,24 +98,37 @@ function MenuApp() {
     }
   };
 
-  // Add this checkout handler function
+  // Enhanced checkout handler with better debugging
   const handleCheckout = async (cartItems: CartItem[], total: number) => {
+    
     setIsCheckingOut(true);
     
     try {
+      // Get environment variables with detailed logging
       const apiKey = import.meta.env.VITE_API_KEY;
       const sendOrderUrl = import.meta.env.VITE_SEND_ORDER_URL;
       const saveOrderUrl = import.meta.env.VITE_SAVE_ORDER_URL;
 
+      console.log('Retrieved values:');
+      console.log('apiKey:', apiKey ? 'PRESENT' : 'MISSING');
+      console.log('sendOrderUrl:', sendOrderUrl ? 'PRESENT' : 'MISSING');
+      console.log('saveOrderUrl:', saveOrderUrl ? 'PRESENT' : 'MISSING');
+
+      // Check each variable individually
       if (!apiKey) {
+        console.error('VITE_API_KEY is missing or undefined');
         throw new Error('VITE_API_KEY is not defined in environment variables');
       }
       if (!sendOrderUrl) {
+        console.error('VITE_SEND_ORDER_URL is missing or undefined');
         throw new Error('VITE_SEND_ORDER_URL is not defined in environment variables');
       }
       if (!saveOrderUrl) {
+        console.error('VITE_SAVE_ORDER_URL is missing or undefined');
         throw new Error('VITE_SAVE_ORDER_URL is not defined in environment variables');
       }
+      
+      console.log('All environment variables are present, proceeding with API calls...');
       
       const headers = {
         'Content-Type': 'application/json',
@@ -137,30 +152,21 @@ function MenuApp() {
       };
 
       console.log('Sending order data:', orderData);
+      console.log('Using URLs:', { sendOrderUrl, saveOrderUrl });
 
       // Call both API endpoints simultaneously
       const [sendOrderResponse, saveOrderResponse] = await Promise.all([
-        axios.post(
-          sendOrderUrl,
-          orderData,
-          { headers }
-        ),
-        axios.post(
-          saveOrderUrl,
-          orderData,
-          { headers }
-        )
+        axios.post(sendOrderUrl, orderData, { headers }),
+        axios.post(saveOrderUrl, orderData, { headers })
       ]);
       
       console.log('Send Order Response:', sendOrderResponse.data);
       console.log('Save Order Response:', saveOrderResponse.data);
-      console.log('Send Order Response:', sendOrderResponse);
-      console.log('Save Order Response:', saveOrderResponse);
       
       // Handle successful checkout
       setCart([]); // Clear the cart
       setIsCartOpen(false); // Close the cart
-      setOrderNote('');  // Add this line to reset the note
+      setOrderNote(''); // Reset the note
       
       alert('Order placed successfully! Thank you for your order.');
       
@@ -168,17 +174,20 @@ function MenuApp() {
       console.error('Checkout failed:', error);
       
       // More detailed error handling
-      if (error.response) {
+      if (axios.isAxiosError(error) && error.response) {
         console.error('Error response data:', error.response.data);
         console.error('Error response status:', error.response.status);
         alert(`Checkout failed: ${error.response.data?.message || 'Server error'}`);
-      } else if (error.request) {
+      } else if (axios.isAxiosError(error) && error.request) {
+        console.error('Network error - no response received');
         alert('Network error. Please check your connection and try again.');
       } else {
-        alert('Checkout failed. Please try again.');
+        console.error('Unexpected error:', error);
+        alert(`Checkout failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
       }
     } finally {
       setIsCheckingOut(false);
+      console.log('=== CHECKOUT DEBUG END ===');
     }
   };
 
