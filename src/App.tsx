@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import axios from 'axios'; // Add this import
+import axios from 'axios';
 import Header from './components/Header';
 import Sidebar from './components/Sidebar';
 import MenuSection from './components/MenuSection';
@@ -28,7 +28,7 @@ function MenuApp() {
   const [searchTerm, setSearchTerm] = useState('');
   const [activeCategory, setActiveCategory] = useState('');
   const [orderNote, setOrderNote] = useState('');
-  const [isCheckingOut, setIsCheckingOut] = useState(false); // Add this line
+  const [isCheckingOut, setIsCheckingOut] = useState(false);
 
   // Organize menu items by category
   const menuCategories = useMemo(() => {
@@ -96,12 +96,24 @@ function MenuApp() {
     }
   };
 
-    // Add this checkout handler function
-    const handleCheckout = async (cartItems: CartItem[], total: number) => {
+  // Add this checkout handler function
+  const handleCheckout = async (cartItems: CartItem[], total: number) => {
     setIsCheckingOut(true);
     
     try {
-      const apiKey = "doDwSSzCSA9F8gN3NO3GVqbUghcfiDS208ngJrm8";
+      const apiKey = process.env.REACT_APP_API_KEY;
+      const sendOrderUrl = process.env.REACT_APP_SEND_ORDER_URL;
+      const saveOrderUrl = process.env.REACT_APP_SAVE_ORDER_URL;
+
+      if (!apiKey) {
+        throw new Error('API_KEY is not defined in environment variables');
+      }
+      if (!sendOrderUrl) {
+        throw new Error('SEND_ORDER_URL is not defined in environment variables');
+      }
+      if (!saveOrderUrl) {
+        throw new Error('SAVE_ORDER_URL is not defined in environment variables');
+      }
       
       const headers = {
         'Content-Type': 'application/json',
@@ -121,7 +133,7 @@ function MenuApp() {
         total: total,
         orderDate: new Date().toISOString(),
         orderNumber: `ORD-${Date.now()}`,
-        notes: orderNote || '',  // Add this line
+        notes: orderNote || '',
       };
 
       console.log('Sending order data:', orderData);
@@ -129,12 +141,12 @@ function MenuApp() {
       // Call both API endpoints simultaneously
       const [sendOrderResponse, saveOrderResponse] = await Promise.all([
         axios.post(
-          'https://097zxtivqd.execute-api.ca-central-1.amazonaws.com/PROD/send-order',
+          sendOrderUrl,
           orderData,
           { headers }
         ),
         axios.post(
-          'https://097zxtivqd.execute-api.ca-central-1.amazonaws.com/PROD/save-order',
+          saveOrderUrl,
           orderData,
           { headers }
         )
@@ -244,8 +256,8 @@ function MenuApp() {
         onRemoveItem={removeFromCart}
         onCheckout={handleCheckout}
         isCheckingOut={isCheckingOut}
-        orderNote={orderNote}  // Add this
-        onNoteChange={setOrderNote}  // Add this
+        orderNote={orderNote}
+        onNoteChange={setOrderNote}
       />
 
       <style jsx>{`
