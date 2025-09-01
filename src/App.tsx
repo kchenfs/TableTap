@@ -101,18 +101,18 @@ function MenuApp() {
     setIsCheckingOut(true);
     
     try {
-      const apiKey = process.env.REACT_APP_API_KEY;
-      const sendOrderUrl = process.env.REACT_APP_SEND_ORDER_URL;
-      const saveOrderUrl = process.env.REACT_APP_SAVE_ORDER_URL;
+      const apiKey = import.meta.env.VITE_API_KEY;
+      const sendOrderUrl = import.meta.env.VITE_SEND_ORDER_URL;
+      const saveOrderUrl = import.meta.env.VITE_SAVE_ORDER_URL;
 
       if (!apiKey) {
-        throw new Error('API_KEY is not defined in environment variables');
+        throw new Error('VITE_API_KEY is not defined in environment variables');
       }
       if (!sendOrderUrl) {
-        throw new Error('SEND_ORDER_URL is not defined in environment variables');
+        throw new Error('VITE_SEND_ORDER_URL is not defined in environment variables');
       }
       if (!saveOrderUrl) {
-        throw new Error('SAVE_ORDER_URL is not defined in environment variables');
+        throw new Error('VITE_SAVE_ORDER_URL is not defined in environment variables');
       }
       
       const headers = {

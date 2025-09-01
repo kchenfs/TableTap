@@ -2,7 +2,7 @@ import React, { createContext, useContext } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { APIMenuItem } from '../types';
 
-const API_URL_MENU = process.env.REACT_APP_API_URL_MENU || 'fallback-url-if-needed'; // Use your prefix (e.g., VITE_ for Vite)
+const API_URL_MENU = import.meta.env.VITE_API_URL_MENU || 'fallback-url-if-needed';
 
 interface MenuContextType {
   MenuItems: APIMenuItem[];
