@@ -4,16 +4,13 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "vite",
-    "build": "vite build",
-    "lint": "eslint .",
-    "preview": "vite preview",
-    "docker:build": "docker build -t restaurant-app .",
-    "docker:run": "docker run -p 3000:80 restaurant-app",
-    "docker:dev": "docker-compose --profile dev up --build",
-    "docker:build": "docker build -t restaurant-app .",
-    "docker:run": "docker run -p 3000:80 restaurant-app",
-    "docker:dev": "docker-compose --profile dev up --build"
+  "dev": "vite --host 0.0.0.0",
+  "build": "vite build",
+  "lint": "eslint .",
+  "preview": "vite preview --host 0.0.0.0 --port 3000",
+  "docker:build": "docker build -t restaurant-app .",
+  "docker:run": "docker run -p 3000:3000 restaurant-app",
+  "docker:dev": "docker-compose --profile dev up --build"
   },
   "dependencies": {
     "@tanstack/react-query": "^5.85.6",

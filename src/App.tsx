@@ -21,8 +21,6 @@ const queryClient = new QueryClient({
   },
 });
 
-
-
 function MenuApp() {
   const { MenuItems, isError, isPending, error } = useMenu();
   const [cart, setCart] = useState<CartItem[]>([]);
@@ -44,16 +42,21 @@ function MenuApp() {
     }
   }, [menuCategories, activeCategory]);
 
-  // Filter menu data based on search term
+  // Filter menu data based on search term with safe handling of undefined values
   const filteredCategories = useMemo(() => {
     if (!searchTerm) return menuCategories;
     
     return menuCategories.map(category => ({
       ...category,
-      items: category.items.filter(item =>
-        item.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        item.description.toLowerCase().includes(searchTerm.toLowerCase())
-      )
+      items: category.items.filter(item => {
+        // Safely handle potentially undefined name and description
+        const itemName = item.name || '';
+        const itemDescription = item.description || '';
+        const searchLower = searchTerm.toLowerCase();
+        
+        return itemName.toLowerCase().includes(searchLower) ||
+               itemDescription.toLowerCase().includes(searchLower);
+      })
     })).filter(category => category.items.length > 0);
   }, [searchTerm, menuCategories]);
 

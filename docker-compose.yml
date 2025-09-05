@@ -1,8 +1,6 @@
-version: '3.8'
-
 services:
-  # First instance of your restaurant app
-  restaurant-app-1:
+  # Table instances
+  table-1:
     build:
       context: .
       dockerfile: Dockerfile
@@ -11,17 +9,15 @@ services:
         - VITE_API_KEY=${VITE_API_KEY}
         - VITE_SEND_ORDER_URL=${VITE_SEND_ORDER_URL}
         - VITE_SAVE_ORDER_URL=${VITE_SAVE_ORDER_URL}
+        - VITE_TABLE_ID=table-1
     environment:
-      - NODE_ENV=production
-    restart: unless-stopped
-    networks:
-      - restaurant-network
-    # No external ports - only accessible through nginx
+      - TABLE_ID=table-1
     expose:
       - "80"
+    networks:
+      - restaurant-network
 
-  # Second instance of your restaurant app
-  restaurant-app-2:
+  table-2:
     build:
       context: .
       dockerfile: Dockerfile
@@ -30,47 +26,204 @@ services:
         - VITE_API_KEY=${VITE_API_KEY}
         - VITE_SEND_ORDER_URL=${VITE_SEND_ORDER_URL}
         - VITE_SAVE_ORDER_URL=${VITE_SAVE_ORDER_URL}
+        - VITE_TABLE_ID=table-2
     environment:
-      - NODE_ENV=production
-    restart: unless-stopped
-    networks:
-      - restaurant-network
-    # No external ports - only accessible through nginx
+      - TABLE_ID=table-2
     expose:
       - "80"
+    networks:
+      - restaurant-network
 
-  # Nginx reverse proxy and load balancer
+  table-3:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        - VITE_API_URL_MENU=${VITE_API_URL_MENU}
+        - VITE_API_KEY=${VITE_API_KEY}
+        - VITE_SEND_ORDER_URL=${VITE_SEND_ORDER_URL}
+        - VITE_SAVE_ORDER_URL=${VITE_SAVE_ORDER_URL}
+        - VITE_TABLE_ID=table-3
+    environment:
+      - TABLE_ID=table-3
+    expose:
+      - "80"
+    networks:
+      - restaurant-network
+
+  table-4:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        - VITE_API_URL_MENU=${VITE_API_URL_MENU}
+        - VITE_API_KEY=${VITE_API_KEY}
+        - VITE_SEND_ORDER_URL=${VITE_SEND_ORDER_URL}
+        - VITE_SAVE_ORDER_URL=${VITE_SAVE_ORDER_URL}
+        - VITE_TABLE_ID=table-4
+    environment:
+      - TABLE_ID=table-4
+    expose:
+      - "80"
+    networks:
+      - restaurant-network
+
+  table-5:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        - VITE_API_URL_MENU=${VITE_API_URL_MENU}
+        - VITE_API_KEY=${VITE_API_KEY}
+        - VITE_SEND_ORDER_URL=${VITE_SEND_ORDER_URL}
+        - VITE_SAVE_ORDER_URL=${VITE_SAVE_ORDER_URL}
+        - VITE_TABLE_ID=table-5
+    environment:
+      - TABLE_ID=table-5
+    expose:
+      - "80"
+    networks:
+      - restaurant-network
+
+  table-6:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        - VITE_API_URL_MENU=${VITE_API_URL_MENU}
+        - VITE_API_KEY=${VITE_API_KEY}
+        - VITE_SEND_ORDER_URL=${VITE_SEND_ORDER_URL}
+        - VITE_SAVE_ORDER_URL=${VITE_SAVE_ORDER_URL}
+        - VITE_TABLE_ID=table-6
+    environment:
+      - TABLE_ID=table-6
+    expose:
+      - "80"
+    networks:
+      - restaurant-network
+
+  table-7:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        - VITE_API_URL_MENU=${VITE_API_URL_MENU}
+        - VITE_API_KEY=${VITE_API_KEY}
+        - VITE_SEND_ORDER_URL=${VITE_SEND_ORDER_URL}
+        - VITE_SAVE_ORDER_URL=${VITE_SAVE_ORDER_URL}
+        - VITE_TABLE_ID=table-7
+    environment:
+      - TABLE_ID=table-7
+    expose:
+      - "80"
+    networks:
+      - restaurant-network
+
+  table-8:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        - VITE_API_URL_MENU=${VITE_API_URL_MENU}
+        - VITE_API_KEY=${VITE_API_KEY}
+        - VITE_SEND_ORDER_URL=${VITE_SEND_ORDER_URL}
+        - VITE_SAVE_ORDER_URL=${VITE_SAVE_ORDER_URL}
+        - VITE_TABLE_ID=table-8
+    environment:
+      - TABLE_ID=table-8
+    expose:
+      - "80"
+    networks:
+      - restaurant-network
+
+  table-9:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        - VITE_API_URL_MENU=${VITE_API_URL_MENU}
+        - VITE_API_KEY=${VITE_API_KEY}
+        - VITE_SEND_ORDER_URL=${VITE_SEND_ORDER_URL}
+        - VITE_SAVE_ORDER_URL=${VITE_SAVE_ORDER_URL}
+        - VITE_TABLE_ID=table-9
+    environment:
+      - TABLE_ID=table-9
+    expose:
+      - "80"
+    networks:
+      - restaurant-network
+
+  table-10:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        - VITE_API_URL_MENU=${VITE_API_URL_MENU}
+        - VITE_API_KEY=${VITE_API_KEY}
+        - VITE_SEND_ORDER_URL=${VITE_SEND_ORDER_URL}
+        - VITE_SAVE_ORDER_URL=${VITE_SAVE_ORDER_URL}
+        - VITE_TABLE_ID=table-10
+    environment:
+      - TABLE_ID=table-10
+    expose:
+      - "80"
+    networks:
+      - restaurant-network
+
+  table-11:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        - VITE_API_URL_MENU=${VITE_API_URL_MENU}
+        - VITE_API_KEY=${VITE_API_KEY}
+        - VITE_SEND_ORDER_URL=${VITE_SEND_ORDER_URL}
+        - VITE_SAVE_ORDER_URL=${VITE_SAVE_ORDER_URL}
+        - VITE_TABLE_ID=table-11
+    environment:
+      - TABLE_ID=table-11
+    expose:
+      - "80"
+    networks:
+      - restaurant-network
+
+  # Nginx reverse proxy with path-based routing
   nginx-proxy:
     image: nginx:alpine
     ports:
-      - "80:80"  # Expose port 80 to your public IP
+      - "80:80"
+      - "443:443"
     volumes:
-      - ./nginx-load-balancer.conf:/etc/nginx/nginx.conf:ro
+      - ./nginx-load-balancer.conf:/etc/nginx/nginx.conf
+      - ./certbot/conf:/etc/letsencrypt
+      - ./certbot/www:/var/www/certbot
     depends_on:
-      - restaurant-app-1
-      - restaurant-app-2
+      - certbot
+      - table-1
+      - table-2
+      - table-3
+      - table-4
+      - table-5
+      - table-6
+      - table-7
+      - table-8
+      - table-9
+      - table-10
+      - table-11
     restart: unless-stopped
     networks:
       - restaurant-network
 
-  # Optional: Add a development service
-  restaurant-app-dev:
-    build:
-      context: .
-      dockerfile: Dockerfile.dev
-    ports:
-      - "5173:5173"
+  certbot:
+    image: certbot/certbot
     volumes:
-      - .:/app
-      - /app/node_modules
-    env_file:
-      - .env
-    environment:
-      - NODE_ENV=development
-    profiles:
-      - dev
+      - ./certbot/conf:/etc/letsencrypt
+      - ./certbot/www:/var/www/certbot
+    command: certonly --webroot --webroot-path=/var/www/certbot --force-renewal --email kendxd@gmail.com -d dine-in.momotarosushi.ca --agree-tos --non-interactive
+    
     networks:
       - restaurant-network
+
 
 networks:
   restaurant-network:
