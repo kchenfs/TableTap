@@ -34,6 +34,8 @@ services:
     networks:
       - restaurant-network
 
+  # ... (services for table-3 through table-11 remain exactly the same) ...
+
   table-3:
     build:
       context: .
@@ -188,28 +190,16 @@ services:
       - restaurant-network
 
   # Nginx reverse proxy with path-based routing
+  # Nginx reverse proxy
   nginx-proxy:
     image: nginx:alpine
     ports:
       - "80:80"
       - "443:443"
     volumes:
-      - ./nginx-load-balancer.conf:/etc/nginx/nginx.conf
+      - ./nginx-load-balancer.conf:/etc/nginx/nginx.conf:ro
       - ./certbot/conf:/etc/letsencrypt
       - ./certbot/www:/var/www/certbot
-    depends_on:
-      - certbot
-      - table-1
-      - table-2
-      - table-3
-      - table-4
-      - table-5
-      - table-6
-      - table-7
-      - table-8
-      - table-9
-      - table-10
-      - table-11
     restart: unless-stopped
     networks:
       - restaurant-network
@@ -219,8 +209,8 @@ services:
     volumes:
       - ./certbot/conf:/etc/letsencrypt
       - ./certbot/www:/var/www/certbot
-    command: certonly --webroot --webroot-path=/var/www/certbot --force-renewal --email kendxd@gmail.com -d dine-in.momotarosushi.ca --agree-tos --non-interactive
-    
+    # This command is now in the more robust list format
+    command: ["sh", "-c", "trap exit TERM; while :; do certbot renew; sleep 12h & wait $${!}; done;"]
     networks:
       - restaurant-network
 
