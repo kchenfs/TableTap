@@ -1,195 +1,109 @@
+# This defines a reusable block of configuration using a YAML anchor (&)
+x-table-template: &table-template
+  build:
+    context: .
+    dockerfile: Dockerfile
+    # Using a map for args allows for merging, which is the key to this template
+    args:
+      VITE_API_URL_MENU: ${VITE_API_URL_MENU}
+      VITE_API_KEY: ${VITE_API_KEY}
+      VITE_SEND_ORDER_URL: ${VITE_SEND_ORDER_URL}
+      VITE_SAVE_ORDER_URL: ${VITE_SAVE_ORDER_URL}
+  expose:
+    - "80"
+  networks:
+    - restaurant-network
+
 services:
   # Table instances
   table-1:
+    <<: *table-template # This merges the template defined above
     build:
-      context: .
-      dockerfile: Dockerfile
       args:
-        - VITE_API_URL_MENU=${VITE_API_URL_MENU}
-        - VITE_API_KEY=${VITE_API_KEY}
-        - VITE_SEND_ORDER_URL=${VITE_SEND_ORDER_URL}
-        - VITE_SAVE_ORDER_URL=${VITE_SAVE_ORDER_URL}
-        - VITE_TABLE_ID=table-1
+        VITE_TABLE_ID: table-1 # This adds the table-specific argument
     environment:
       - TABLE_ID=table-1
-    expose:
-      - "80"
-    networks:
-      - restaurant-network
 
   table-2:
+    <<: *table-template
     build:
-      context: .
-      dockerfile: Dockerfile
       args:
-        - VITE_API_URL_MENU=${VITE_API_URL_MENU}
-        - VITE_API_KEY=${VITE_API_KEY}
-        - VITE_SEND_ORDER_URL=${VITE_SEND_ORDER_URL}
-        - VITE_SAVE_ORDER_URL=${VITE_SAVE_ORDER_URL}
-        - VITE_TABLE_ID=table-2
+        VITE_TABLE_ID: table-2
     environment:
       - TABLE_ID=table-2
-    expose:
-      - "80"
-    networks:
-      - restaurant-network
-
-  # ... (services for table-3 through table-11 remain exactly the same) ...
 
   table-3:
+    <<: *table-template
     build:
-      context: .
-      dockerfile: Dockerfile
       args:
-        - VITE_API_URL_MENU=${VITE_API_URL_MENU}
-        - VITE_API_KEY=${VITE_API_KEY}
-        - VITE_SEND_ORDER_URL=${VITE_SEND_ORDER_URL}
-        - VITE_SAVE_ORDER_URL=${VITE_SAVE_ORDER_URL}
-        - VITE_TABLE_ID=table-3
+        VITE_TABLE_ID: table-3
     environment:
       - TABLE_ID=table-3
-    expose:
-      - "80"
-    networks:
-      - restaurant-network
 
   table-4:
+    <<: *table-template
     build:
-      context: .
-      dockerfile: Dockerfile
       args:
-        - VITE_API_URL_MENU=${VITE_API_URL_MENU}
-        - VITE_API_KEY=${VITE_API_KEY}
-        - VITE_SEND_ORDER_URL=${VITE_SEND_ORDER_URL}
-        - VITE_SAVE_ORDER_URL=${VITE_SAVE_ORDER_URL}
-        - VITE_TABLE_ID=table-4
+        VITE_TABLE_ID: table-4
     environment:
       - TABLE_ID=table-4
-    expose:
-      - "80"
-    networks:
-      - restaurant-network
 
   table-5:
+    <<: *table-template
     build:
-      context: .
-      dockerfile: Dockerfile
       args:
-        - VITE_API_URL_MENU=${VITE_API_URL_MENU}
-        - VITE_API_KEY=${VITE_API_KEY}
-        - VITE_SEND_ORDER_URL=${VITE_SEND_ORDER_URL}
-        - VITE_SAVE_ORDER_URL=${VITE_SAVE_ORDER_URL}
-        - VITE_TABLE_ID=table-5
+        VITE_TABLE_ID: table-5
     environment:
       - TABLE_ID=table-5
-    expose:
-      - "80"
-    networks:
-      - restaurant-network
 
   table-6:
+    <<: *table-template
     build:
-      context: .
-      dockerfile: Dockerfile
       args:
-        - VITE_API_URL_MENU=${VITE_API_URL_MENU}
-        - VITE_API_KEY=${VITE_API_KEY}
-        - VITE_SEND_ORDER_URL=${VITE_SEND_ORDER_URL}
-        - VITE_SAVE_ORDER_URL=${VITE_SAVE_ORDER_URL}
-        - VITE_TABLE_ID=table-6
+        VITE_TABLE_ID: table-6
     environment:
       - TABLE_ID=table-6
-    expose:
-      - "80"
-    networks:
-      - restaurant-network
 
   table-7:
+    <<: *table-template
     build:
-      context: .
-      dockerfile: Dockerfile
       args:
-        - VITE_API_URL_MENU=${VITE_API_URL_MENU}
-        - VITE_API_KEY=${VITE_API_KEY}
-        - VITE_SEND_ORDER_URL=${VITE_SEND_ORDER_URL}
-        - VITE_SAVE_ORDER_URL=${VITE_SAVE_ORDER_URL}
-        - VITE_TABLE_ID=table-7
+        VITE_TABLE_ID: table-7
     environment:
       - TABLE_ID=table-7
-    expose:
-      - "80"
-    networks:
-      - restaurant-network
 
   table-8:
+    <<: *table-template
     build:
-      context: .
-      dockerfile: Dockerfile
       args:
-        - VITE_API_URL_MENU=${VITE_API_URL_MENU}
-        - VITE_API_KEY=${VITE_API_KEY}
-        - VITE_SEND_ORDER_URL=${VITE_SEND_ORDER_URL}
-        - VITE_SAVE_ORDER_URL=${VITE_SAVE_ORDER_URL}
-        - VITE_TABLE_ID=table-8
+        VITE_TABLE_ID: table-8
     environment:
       - TABLE_ID=table-8
-    expose:
-      - "80"
-    networks:
-      - restaurant-network
 
   table-9:
+    <<: *table-template
     build:
-      context: .
-      dockerfile: Dockerfile
       args:
-        - VITE_API_URL_MENU=${VITE_API_URL_MENU}
-        - VITE_API_KEY=${VITE_API_KEY}
-        - VITE_SEND_ORDER_URL=${VITE_SEND_ORDER_URL}
-        - VITE_SAVE_ORDER_URL=${VITE_SAVE_ORDER_URL}
-        - VITE_TABLE_ID=table-9
+        VITE_TABLE_ID: table-9
     environment:
       - TABLE_ID=table-9
-    expose:
-      - "80"
-    networks:
-      - restaurant-network
 
   table-10:
+    <<: *table-template
     build:
-      context: .
-      dockerfile: Dockerfile
       args:
-        - VITE_API_URL_MENU=${VITE_API_URL_MENU}
-        - VITE_API_KEY=${VITE_API_KEY}
-        - VITE_SEND_ORDER_URL=${VITE_SEND_ORDER_URL}
-        - VITE_SAVE_ORDER_URL=${VITE_SAVE_ORDER_URL}
-        - VITE_TABLE_ID=table-10
+        VITE_TABLE_ID: table-10
     environment:
       - TABLE_ID=table-10
-    expose:
-      - "80"
-    networks:
-      - restaurant-network
 
   table-11:
+    <<: *table-template
     build:
-      context: .
-      dockerfile: Dockerfile
       args:
-        - VITE_API_URL_MENU=${VITE_API_URL_MENU}
-        - VITE_API_KEY=${VITE_API_KEY}
-        - VITE_SEND_ORDER_URL=${VITE_SEND_ORDER_URL}
-        - VITE_SAVE_ORDER_URL=${VITE_SAVE_ORDER_URL}
-        - VITE_TABLE_ID=table-11
+        VITE_TABLE_ID: table-11
     environment:
       - TABLE_ID=table-11
-    expose:
-      - "80"
-    networks:
-      - restaurant-network
 
-  # Nginx reverse proxy with path-based routing
   # Nginx reverse proxy
   nginx-proxy:
     image: nginx:alpine
@@ -209,11 +123,9 @@ services:
     volumes:
       - ./certbot/conf:/etc/letsencrypt
       - ./certbot/www:/var/www/certbot
-    # This command is now in the more robust list format
     command: ["sh", "-c", "trap exit TERM; while :; do certbot renew; sleep 12h & wait $${!}; done;"]
     networks:
       - restaurant-network
-
 
 networks:
   restaurant-network:

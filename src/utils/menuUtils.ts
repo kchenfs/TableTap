@@ -3,10 +3,12 @@ import { APIMenuItem, MenuItem, MenuCategory } from '../types';
 export const transformAPIMenuItem = (apiItem: APIMenuItem): MenuItem => ({
   id: apiItem.ItemNumber,
   name: apiItem.ItemName,
-  description: apiItem.ItemDescription,
-  price: apiItem.Price,
+  description: apiItem.Description,
+  Price: Number(apiItem.Price), // ✅ Ensure Price is a number
   category: apiItem.Category.toLowerCase().replace(/\s+/g, '-'),
-  location: apiItem.Location
+  location: apiItem.Location,
+  options: apiItem.Options // ✅ ADD THIS LINE
+
 });
 
 export const organizeMenuByCategory = (apiItems: APIMenuItem[]): MenuCategory[] => {

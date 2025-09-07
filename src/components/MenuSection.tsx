@@ -4,16 +4,16 @@ import { MenuCategory, MenuItem as MenuItemType } from '../types';
 
 interface MenuSectionProps {
   category: MenuCategory;
-  onAddToCart: (item: MenuItemType) => void;
+  onItemSelect: (item: MenuItemType) => void;
   delay: number;
 }
 
-export default function MenuSection({ category, onAddToCart, delay }: MenuSectionProps) {
+export default function MenuSection({ category, onItemSelect, delay }: MenuSectionProps) {
   return (
     <section 
       id={category.id} 
       className="animate-slide-in-fade" 
-      style={{ '--delay': `${delay}ms` } as any}
+      style={{ '--delay': `${delay}ms` } as React.CSSProperties}
     >
       <h2 className="text-2xl font-semibold tracking-tight text-slate-50 border-b border-slate-800 pb-4">
         {category.name}
@@ -23,10 +23,11 @@ export default function MenuSection({ category, onAddToCart, delay }: MenuSectio
           <MenuItem 
             key={item.id} 
             item={item} 
-            onAddToCart={onAddToCart}
+            onSelect={onItemSelect}
           />
         ))}
       </div>
     </section>
   );
 }
+
