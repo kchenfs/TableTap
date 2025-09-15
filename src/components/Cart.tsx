@@ -12,6 +12,7 @@ interface CartProps {
   isCheckingOut?: boolean;
   orderNote: string;
   onNoteChange: (note: string) => void;
+  checkoutButtonText: string; // <-- ADDED THIS PROP
 }
 
 export default function Cart({ 
@@ -23,7 +24,8 @@ export default function Cart({
   onCheckout,
   isCheckingOut = false,
   orderNote,
-  onNoteChange
+  onNoteChange,
+  checkoutButtonText // <-- ADDED THIS PROP
 }: CartProps) {
   const TAX_RATE = 0.13;
   const subtotal = cart.reduce((sum, item) => sum + (item.finalPrice * item.quantity), 0);
@@ -133,7 +135,8 @@ export default function Cart({
                 disabled={isCheckingOut}
                 className="w-full rounded-lg bg-slate-200 py-3 font-semibold text-slate-900 disabled:opacity-50"
               >
-                {isCheckingOut ? 'Processing...' : 'Proceed to Checkout'}
+                {/* UPDATED THIS LINE */}
+                {isCheckingOut ? 'Processing...' : checkoutButtonText}
               </button>
             </div>
           )}
@@ -142,4 +145,3 @@ export default function Cart({
     </>
   );
 }
-

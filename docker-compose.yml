@@ -5,7 +5,7 @@ x-common-build-args: &common-build-args
   VITE_SEND_ORDER_URL: ${VITE_SEND_ORDER_URL}
   VITE_SAVE_ORDER_URL: ${VITE_SAVE_ORDER_URL}
 
-x-table-service: &table-service
+x-base-service: &base-service
   build:
     context: .
     dockerfile: Dockerfile
@@ -15,129 +15,37 @@ x-table-service: &table-service
     - restaurant-network
 
 services:
-  # Table instances
+  # Table instances for Dine-in
   table-1:
-    <<: *table-service
+    <<: *base-service
     build:
-      context: .
-      dockerfile: Dockerfile
       args:
         <<: *common-build-args
+        VITE_APP_MODE: dine-in
         VITE_TABLE_ID: table-1
-    environment:
-      - TABLE_ID=table-1
+  
+  # ... Repeat for table-2 through table-11 just like table-1 ...
+  table-2: {<<: *base-service, build: {args: {<<: *common-build-args, VITE_APP_MODE: dine-in, VITE_TABLE_ID: table-2}}}
+  table-3: {<<: *base-service, build: {args: {<<: *common-build-args, VITE_APP_MODE: dine-in, VITE_TABLE_ID: table-3}}}
+  table-4: {<<: *base-service, build: {args: {<<: *common-build-args, VITE_APP_MODE: dine-in, VITE_TABLE_ID: table-4}}}
+  table-5: {<<: *base-service, build: {args: {<<: *common-build-args, VITE_APP_MODE: dine-in, VITE_TABLE_ID: table-5}}}
+  table-6: {<<: *base-service, build: {args: {<<: *common-build-args, VITE_APP_MODE: dine-in, VITE_TABLE_ID: table-6}}}
+  table-7: {<<: *base-service, build: {args: {<<: *common-build-args, VITE_APP_MODE: dine-in, VITE_TABLE_ID: table-7}}}
+  table-8: {<<: *base-service, build: {args: {<<: *common-build-args, VITE_APP_MODE: dine-in, VITE_TABLE_ID: table-8}}}
+  table-9: {<<: *base-service, build: {args: {<<: *common-build-args, VITE_APP_MODE: dine-in, VITE_TABLE_ID: table-9}}}
+  table-10: {<<: *base-service, build: {args: {<<: *common-build-args, VITE_APP_MODE: dine-in, VITE_TABLE_ID: table-10}}}
+  table-11: {<<: *base-service, build: {args: {<<: *common-build-args, VITE_APP_MODE: dine-in, VITE_TABLE_ID: table-11}}}
 
-  table-2:
-    <<: *table-service
+  # ADD THIS NEW SERVICE FOR TAKEOUT
+  takeout:
+    <<: *base-service
     build:
-      context: .
-      dockerfile: Dockerfile
       args:
         <<: *common-build-args
-        VITE_TABLE_ID: table-2
-    environment:
-      - TABLE_ID=table-2
+        VITE_APP_MODE: takeout
+        VITE_TABLE_ID: takeout
 
-  table-3:
-    <<: *table-service
-    build:
-      context: .
-      dockerfile: Dockerfile
-      args:
-        <<: *common-build-args
-        VITE_TABLE_ID: table-3
-    environment:
-      - TABLE_ID=table-3
-
-  table-4:
-    <<: *table-service
-    build:
-      context: .
-      dockerfile: Dockerfile
-      args:
-        <<: *common-build-args
-        VITE_TABLE_ID: table-4
-    environment:
-      - TABLE_ID=table-4
-
-  table-5:
-    <<: *table-service
-    build:
-      context: .
-      dockerfile: Dockerfile
-      args:
-        <<: *common-build-args
-        VITE_TABLE_ID: table-5
-    environment:
-      - TABLE_ID=table-5
-
-  table-6:
-    <<: *table-service
-    build:
-      context: .
-      dockerfile: Dockerfile
-      args:
-        <<: *common-build-args
-        VITE_TABLE_ID: table-6
-    environment:
-      - TABLE_ID=table-6
-
-  table-7:
-    <<: *table-service
-    build:
-      context: .
-      dockerfile: Dockerfile
-      args:
-        <<: *common-build-args
-        VITE_TABLE_ID: table-7
-    environment:
-      - TABLE_ID=table-7
-
-  table-8:
-    <<: *table-service
-    build:
-      context: .
-      dockerfile: Dockerfile
-      args:
-        <<: *common-build-args
-        VITE_TABLE_ID: table-8
-    environment:
-      - TABLE_ID=table-8
-
-  table-9:
-    <<: *table-service
-    build:
-      context: .
-      dockerfile: Dockerfile
-      args:
-        <<: *common-build-args
-        VITE_TABLE_ID: table-9
-    environment:
-      - TABLE_ID=table-9
-
-  table-10:
-    <<: *table-service
-    build:
-      context: .
-      dockerfile: Dockerfile
-      args:
-        <<: *common-build-args
-        VITE_TABLE_ID: table-10
-    environment:
-      - TABLE_ID=table-10
-
-  table-11:
-    <<: *table-service
-    build:
-      context: .
-      dockerfile: Dockerfile
-      args:
-        <<: *common-build-args
-        VITE_TABLE_ID: table-11
-    environment:
-      - TABLE_ID=table-11
-
-  # Nginx reverse proxy
+  # Nginx reverse proxy (no changes needed here)
   nginx-proxy:
     image: nginx:alpine
     ports:
@@ -151,6 +59,7 @@ services:
     networks:
       - restaurant-network
 
+  # Certbot (no changes needed here)
   certbot:
     image: certbot/certbot
     volumes:

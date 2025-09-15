@@ -33,11 +33,11 @@ function MenuApp() {
   const [isOptionsModalOpen, setIsOptionsModalOpen] = useState(false);
   const [selectedItem, setSelectedItem] = useState<MenuItem | null>(null);
 
-  const menuCategories = useMemo(() => organizeMenuByCategory(MenuItems), [MenuItems]);
+  // --- NEW: Read environment variables ---
+  const appMode = import.meta.env.VITE_APP_MODE || 'dine-in'; // 'dine-in' is a safe default
+  const tableId = import.meta.env.VITE_TABLE_ID;
 
-  console.log('MenuItems from API:', MenuItems); 
-  // Use this for a nice table view of your menu items
-  console.table(MenuItems);
+  const menuCategories = useMemo(() => organizeMenuByCategory(MenuItems), [MenuItems]);
 
   React.useEffect(() => {
     if (menuCategories.length > 0 && !activeCategory) {
@@ -107,46 +107,69 @@ function MenuApp() {
     document.getElementById(categoryId)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
   };
   
+  // --- NEW: Updated checkout logic ---
   const handleCheckout = async (cartItems: CartItem[], total: number) => {
     setIsCheckingOut(true);
-    try {
-      const apiKey = import.meta.env.VITE_API_KEY;
-      const sendOrderUrl = import.meta.env.VITE_SEND_ORDER_URL;
-      const saveOrderUrl = import.meta.env.VITE_SAVE_ORDER_URL;
-      const headers = { 'Content-Type': 'application/json', 'x-api-key': apiKey };
-      
-      const orderData = {
-        items: cartItems.map(item => ({
-          id: item.menuItem.id,
-          name: item.menuItem.name,
-          price: item.finalPrice,
-          quantity: item.quantity,
-          subtotal: item.finalPrice * item.quantity,
-          location: item.menuItem.location,
-          options: Object.entries(item.selectedOptions).map(([group, option]) => 
-            `${group}: ${option.name}`
-          ).join('; ')
-        })),
-        total,
-        orderDate: new Date().toISOString(),
-        orderNumber: `ORD-${Date.now()}`,
-        notes: orderNote || '',
-      };
-      
-      await Promise.all([
-        axios.post(sendOrderUrl, orderData, { headers }),
-        axios.post(saveOrderUrl, orderData, { headers })
-      ]);
-      
-      setCart([]);
-      setIsCartOpen(false);
-      setOrderNote('');
-      alert('Order placed successfully!');
-    } catch (error) {
-      console.error('Checkout failed:', error);
-      alert('Checkout failed. Please try again.');
-    } finally {
-      setIsCheckingOut(false);
+
+    if (appMode === 'takeout') {
+      // 💳 STRIPE CHECKOUT LOGIC
+      try {
+        console.log("Initiating Stripe payment for takeout...");
+        // This is where you will call your backend Lambda function.
+        // For now, we'll just simulate a success.
+        alert('This will redirect to Stripe. (Placeholder)');
+        // Example: await initiateStripePayment(cartItems, total, orderNote);
+        setCart([]);
+        setIsCartOpen(false);
+        setOrderNote('');
+      } catch (error) {
+        console.error('Stripe checkout failed:', error);
+        alert('Payment processing failed. Please try again.');
+      } finally {
+        setIsCheckingOut(false);
+      }
+    } else {
+      // 🍽️ DINE-IN CHECKOUT LOGIC
+      try {
+        const apiKey = import.meta.env.VITE_API_KEY;
+        const sendOrderUrl = import.meta.env.VITE_SEND_ORDER_URL;
+        const saveOrderUrl = import.meta.env.VITE_SAVE_ORDER_URL;
+        const headers = { 'Content-Type': 'application/json', 'x-api-key': apiKey };
+        
+        const orderData = {
+          items: cartItems.map(item => ({
+            id: item.menuItem.id,
+            name: item.menuItem.name,
+            price: item.finalPrice,
+            quantity: item.quantity,
+            subtotal: item.finalPrice * item.quantity,
+            location: item.menuItem.location,
+            options: Object.entries(item.selectedOptions).map(([group, option]) => 
+              `${group}: ${option.name}`
+            ).join('; ')
+          })),
+          total,
+          orderDate: new Date().toISOString(),
+          orderNumber: `ORD-${Date.now()}`,
+          notes: orderNote || '',
+          table: tableId, // Include the table ID in the order
+        };
+        
+        await Promise.all([
+          axios.post(sendOrderUrl, orderData, { headers }),
+          axios.post(saveOrderUrl, orderData, { headers })
+        ]);
+        
+        setCart([]);
+        setIsCartOpen(false);
+        setOrderNote('');
+        alert('Order sent to the kitchen!');
+      } catch (error) {
+        console.error('Checkout failed:', error);
+        alert('Failed to send order. Please show your cart to the staff.');
+      } finally {
+        setIsCheckingOut(false);
+      }
     }
   };
   
@@ -158,6 +181,11 @@ function MenuApp() {
       <Header cart={cart} onCartClick={() => setIsCartOpen(true)} />
       
       <main className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
+        {appMode === 'dine-in' && (
+          <h1 className="text-3xl font-bold tracking-tight text-slate-100 mb-8 animate-slide-in-fade">
+            Welcome to Table {tableId?.replace('table-', '')}
+          </h1>
+        )}
         <div className="lg:grid lg:grid-cols-12 lg:gap-12">
           <Sidebar 
             categories={menuCategories}
@@ -191,6 +219,8 @@ function MenuApp() {
         isCheckingOut={isCheckingOut}
         orderNote={orderNote}
         onNoteChange={setOrderNote}
+        // --- NEW: Pass the dynamic button text ---
+        checkoutButtonText={appMode === 'takeout' ? 'Proceed to Payment' : 'Send to Kitchen'}
       />
 
       <ItemOptionsModal
@@ -234,4 +264,3 @@ function App() {
 }
 
 export default App;
-
