@@ -1,14 +1,14 @@
-# This defines a reusable block of configuration using a YAML anchor (&)
-x-table-template: &table-template
+# Extension fields for reusable configuration
+x-common-build-args: &common-build-args
+  VITE_API_URL_MENU: ${VITE_API_URL_MENU}
+  VITE_API_KEY: ${VITE_API_KEY}
+  VITE_SEND_ORDER_URL: ${VITE_SEND_ORDER_URL}
+  VITE_SAVE_ORDER_URL: ${VITE_SAVE_ORDER_URL}
+
+x-table-service: &table-service
   build:
     context: .
     dockerfile: Dockerfile
-    # Using a map for args allows for merging, which is the key to this template
-    args:
-      VITE_API_URL_MENU: ${VITE_API_URL_MENU}
-      VITE_API_KEY: ${VITE_API_KEY}
-      VITE_SEND_ORDER_URL: ${VITE_SEND_ORDER_URL}
-      VITE_SAVE_ORDER_URL: ${VITE_SAVE_ORDER_URL}
   expose:
     - "80"
   networks:
@@ -17,89 +17,122 @@ x-table-template: &table-template
 services:
   # Table instances
   table-1:
-    <<: *table-template # This merges the template defined above
+    <<: *table-service
     build:
+      context: .
+      dockerfile: Dockerfile
       args:
-        VITE_TABLE_ID: table-1 # This adds the table-specific argument
+        <<: *common-build-args
+        VITE_TABLE_ID: table-1
     environment:
       - TABLE_ID=table-1
 
   table-2:
-    <<: *table-template
+    <<: *table-service
     build:
+      context: .
+      dockerfile: Dockerfile
       args:
+        <<: *common-build-args
         VITE_TABLE_ID: table-2
     environment:
       - TABLE_ID=table-2
 
   table-3:
-    <<: *table-template
+    <<: *table-service
     build:
+      context: .
+      dockerfile: Dockerfile
       args:
+        <<: *common-build-args
         VITE_TABLE_ID: table-3
     environment:
       - TABLE_ID=table-3
 
   table-4:
-    <<: *table-template
+    <<: *table-service
     build:
+      context: .
+      dockerfile: Dockerfile
       args:
+        <<: *common-build-args
         VITE_TABLE_ID: table-4
     environment:
       - TABLE_ID=table-4
 
   table-5:
-    <<: *table-template
+    <<: *table-service
     build:
+      context: .
+      dockerfile: Dockerfile
       args:
+        <<: *common-build-args
         VITE_TABLE_ID: table-5
     environment:
       - TABLE_ID=table-5
 
   table-6:
-    <<: *table-template
+    <<: *table-service
     build:
+      context: .
+      dockerfile: Dockerfile
       args:
+        <<: *common-build-args
         VITE_TABLE_ID: table-6
     environment:
       - TABLE_ID=table-6
 
   table-7:
-    <<: *table-template
+    <<: *table-service
     build:
+      context: .
+      dockerfile: Dockerfile
       args:
+        <<: *common-build-args
         VITE_TABLE_ID: table-7
     environment:
       - TABLE_ID=table-7
 
   table-8:
-    <<: *table-template
+    <<: *table-service
     build:
+      context: .
+      dockerfile: Dockerfile
       args:
+        <<: *common-build-args
         VITE_TABLE_ID: table-8
     environment:
       - TABLE_ID=table-8
 
   table-9:
-    <<: *table-template
+    <<: *table-service
     build:
+      context: .
+      dockerfile: Dockerfile
       args:
+        <<: *common-build-args
         VITE_TABLE_ID: table-9
     environment:
       - TABLE_ID=table-9
 
   table-10:
-    <<: *table-template
+    <<: *table-service
     build:
+      context: .
+      dockerfile: Dockerfile
       args:
+        <<: *common-build-args
         VITE_TABLE_ID: table-10
     environment:
       - TABLE_ID=table-10
 
   table-11:
-    <<: *table-template
+    <<: *table-service
     build:
+      context: .
+      dockerfile: Dockerfile
       args:
+        <<: *common-build-args
         VITE_TABLE_ID: table-11
     environment:
       - TABLE_ID=table-11

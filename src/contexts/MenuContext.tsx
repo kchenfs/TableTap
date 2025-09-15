@@ -1,52 +1,47 @@
+// File: MenuContext.tsx
+
 import React, { createContext, useContext } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { APIMenuItem } from '../types';
+import { APIMenuItem } from './types'; // Assuming your types file is here
 
-const API_URL_MENU = import.meta.env.VITE_API_URL_MENU || 'fallback-url-if-needed';
+// This is the corrected data fetching function
+const fetchMenu = async (): Promise<APIMenuItem[]> => {
+  const response = await fetch('https://097zxtivqd.execute-api.ca-central-1.amazonaws.com/PROD/getMenuItem');
+  if (!response.ok) {
+    throw new Error('Network response was not ok');
+  }
+  // This gets the outer object, e.g., { statusCode: 200, body: "..." }
+  const data = await response.json();
 
-interface MenuContextType {
-  MenuItems: APIMenuItem[];
-  isError: boolean;
-  isPending: boolean;
-  error: Error | null;
-}
+  // First, access the 'body' property. Then, parse the string inside it.
+  if (data && data.body) {
+    const parsedBody = JSON.parse(data.body);
+    return parsedBody || [];
+  }
+  
+  // Return an empty array if there's no body, preventing crashes
+  return [];
+};
 
-const MenuContext = createContext<MenuContextType | undefined>(undefined);
+// --- No other changes are needed below this line ---
+
+const MenuContext = createContext<any>(null);
 
 export const useMenu = () => {
   const context = useContext(MenuContext);
-  if (context === undefined) {
+  if (!context) {
     throw new Error('useMenu must be used within a MenuProvider');
   }
   return context;
 };
 
-interface MenuProviderProps {
-  children: React.ReactNode;
-}
-
-const MenuProvider: React.FC<MenuProviderProps> = ({ children }) => {
-  const {
-    data: MenuItems = [],
-    isError,
-    isPending,
-    error,
-  } = useQuery({
+export const MenuProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const { data, ...rest } = useQuery<APIMenuItem[]>({
     queryKey: ['menuItems'],
-    queryFn: async () => {
-      const response = await fetch(API_URL_MENU);
-      if (!response.ok) throw new Error('Network response was not ok');
-
-      const data = await response.json();
-      return JSON.parse(data.body);
-    },
+    queryFn: fetchMenu,
   });
 
-  return (
-    <MenuContext.Provider value={{ MenuItems, isError, isPending, error }}>
-      {children}
-    </MenuContext.Provider>
-  );
-};
+  const value = { MenuItems: data ?? [], ...rest };
 
-export default MenuProvider;
+  return <MenuContext.Provider value={value}>{children}</MenuContext.Provider>;
+};

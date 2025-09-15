@@ -9,6 +9,23 @@ interface MenuItemProps {
 
 export default function MenuItem({ item, onSelect }: MenuItemProps) {
   const hasOptions = item.options && item.options.length > 0;
+  
+  // Check if any options actually affect the price
+  const hasPriceAffectingOptions = React.useMemo(() => {
+    if (!item.options || !Array.isArray(item.options)) {
+      return false;
+    }
+    
+    return item.options.some(group => {
+      if (!group.items || !Array.isArray(group.items)) {
+        return false;
+      }
+      return group.items.some(option => {
+        const modifier = typeof option.priceModifier === 'number' ? option.priceModifier : 0;
+        return modifier !== 0;
+      });
+    });
+  }, [item.options]);
 
   return (
     <div className="py-5 flex items-center justify-between">
@@ -18,7 +35,7 @@ export default function MenuItem({ item, onSelect }: MenuItemProps) {
       </div>
       <div className="flex items-center gap-4">
         <p className="text-base font-semibold text-slate-50 w-20 text-right">
-          ${Number(item.Price).toFixed(2)}{hasOptions ? '+' : ''}
+          ${Number(item.Price).toFixed(2)}{hasPriceAffectingOptions ? '+' : ''}
         </p>
         <button 
           onClick={() => onSelect(item)}
@@ -31,4 +48,3 @@ export default function MenuItem({ item, onSelect }: MenuItemProps) {
     </div>
   );
 }
-

@@ -7,7 +7,7 @@ import MenuSection from './components/MenuSection';
 import Cart from './components/Cart';
 import LoadingSpinner from './components/LoadingSpinner';
 import ErrorMessage from './components/ErrorMessage';
-import MenuProvider, { useMenu } from './contexts/MenuContext';
+import {MenuProvider,  useMenu } from './contexts/MenuContext';
 import { organizeMenuByCategory } from './utils/menuUtils';
 import { CartItem, MenuItem } from './types';
 import ItemOptionsModal from './components/ItemOptionsModal';
@@ -34,6 +34,10 @@ function MenuApp() {
   const [selectedItem, setSelectedItem] = useState<MenuItem | null>(null);
 
   const menuCategories = useMemo(() => organizeMenuByCategory(MenuItems), [MenuItems]);
+
+  console.log('MenuItems from API:', MenuItems); 
+  // Use this for a nice table view of your menu items
+  console.table(MenuItems);
 
   React.useEffect(() => {
     if (menuCategories.length > 0 && !activeCategory) {

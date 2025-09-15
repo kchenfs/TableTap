@@ -1,25 +1,33 @@
-import { APIMenuItem, MenuItem, MenuCategory } from '../types';
+// File: menuUtils.ts
 
-export const transformAPIMenuItem = (apiItem: APIMenuItem): MenuItem => ({
-  id: apiItem.ItemNumber,
+import { MenuItem, MenuCategory } from './types';
+
+// Simplified transformer for the new, clean JSON
+export const transformAPIMenuItem = (apiItem: any): MenuItem => ({
+  id: String(apiItem.ItemNumber),
   name: apiItem.ItemName,
   description: apiItem.Description,
-  Price: Number(apiItem.Price), // ✅ Ensure Price is a number
-  category: apiItem.Category.toLowerCase().replace(/\s+/g, '-'),
+  Price: Number(apiItem.Price),
+  category: (apiItem.Category || 'uncategorized').toLowerCase().replace(/\s+/g, '-'),
   location: apiItem.Location,
-  options: apiItem.Options // ✅ ADD THIS LINE
-
+  // The options are already in the correct format, no change needed here
+  options: apiItem.Options || [],
 });
 
-export const organizeMenuByCategory = (apiItems: APIMenuItem[]): MenuCategory[] => {
-  const transformedItems = apiItems.map(transformAPIMenuItem);
+// Simplified organizer function
+export const organizeMenuByCategory = (apiItems: any[]): MenuCategory[] => {
+  // Filter out any items that are null, undefined, or don't have a valid category
+  const validItems = apiItems.filter(item => item && item.Category);
   
-  // Get unique categories
+  if (validItems.length === 0) return [];
+
+  const transformedItems = validItems.map(transformAPIMenuItem);
+  
+  // Create a set of unique category names from the valid items
   const uniqueCategories = Array.from(
-    new Set(apiItems.map(item => item.Category))
+    new Set(validItems.map(item => item.Category))
   );
 
-  // Create category objects with items
   return uniqueCategories.map(categoryName => {
     const categoryId = categoryName.toLowerCase().replace(/\s+/g, '-');
     const categoryItems = transformedItems.filter(item => 
