@@ -7,10 +7,16 @@ import MenuSection from './components/MenuSection';
 import Cart from './components/Cart';
 import LoadingSpinner from './components/LoadingSpinner';
 import ErrorMessage from './components/ErrorMessage';
-import {MenuProvider,  useMenu } from './contexts/MenuContext';
+import { MenuProvider, useMenu } from './contexts/MenuContext';
 import { organizeMenuByCategory } from './utils/menuUtils';
 import { CartItem, MenuItem } from './types';
 import ItemOptionsModal from './components/ItemOptionsModal';
+
+// --- STRIPE IMPORTS ---
+import { loadStripe } from '@stripe/stripe-js';
+import { Elements } from '@stripe/react-stripe-js';
+import CheckoutForm from './components/CheckoutForm';
+import Completion from './components/Completion';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -20,6 +26,10 @@ const queryClient = new QueryClient({
     },
   },
 });
+
+// --- STRIPE SETUP ---
+// Replace with your actual Stripe publishable key
+const stripePromise = loadStripe('pk_test_...');
 
 function MenuApp() {
   const { MenuItems, isError, isPending, error } = useMenu();
@@ -33,8 +43,11 @@ function MenuApp() {
   const [isOptionsModalOpen, setIsOptionsModalOpen] = useState(false);
   const [selectedItem, setSelectedItem] = useState<MenuItem | null>(null);
 
-  // --- NEW: Read environment variables ---
-  const appMode = import.meta.env.VITE_APP_MODE || 'dine-in'; // 'dine-in' is a safe default
+  // --- NEW STRIPE STATE ---
+  const [isCheckoutModalOpen, setIsCheckoutModalOpen] = useState(false);
+  const [clientSecret, setClientSecret] = useState('');
+
+  const appMode = import.meta.env.VITE_APP_MODE || 'dine-in';
   const tableId = import.meta.env.VITE_TABLE_ID;
 
   const menuCategories = useMemo(() => organizeMenuByCategory(MenuItems), [MenuItems]);
@@ -106,22 +119,27 @@ function MenuApp() {
     setActiveCategory(categoryId);
     document.getElementById(categoryId)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
   };
-  
-  // --- NEW: Updated checkout logic ---
+
   const handleCheckout = async (cartItems: CartItem[], total: number) => {
     setIsCheckingOut(true);
 
     if (appMode === 'takeout') {
-      // 💳 STRIPE CHECKOUT LOGIC
+      // --- UPDATED STRIPE CHECKOUT LOGIC ---
       try {
-        console.log("Initiating Stripe payment for takeout...");
-        // This is where you will call your backend Lambda function.
-        // For now, we'll just simulate a success.
-        alert('This will redirect to Stripe. (Placeholder)');
-        // Example: await initiateStripePayment(cartItems, total, orderNote);
-        setCart([]);
-        setIsCartOpen(false);
-        setOrderNote('');
+        const paymentApiUrl = `${import.meta.env.VITE_API_GATEWAY_URL}/create-payment-intent`;
+        const res = await fetch(paymentApiUrl, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ items: cartItems }), // Send cart items to the backend
+        });
+
+        const data = await res.json();
+        if (data.clientSecret) {
+          setClientSecret(data.clientSecret);
+          setIsCheckoutModalOpen(true); // Open Stripe modal after getting the secret
+        } else {
+          throw new Error(data.error || 'Failed to initialize payment.');
+        }
       } catch (error) {
         console.error('Stripe checkout failed:', error);
         alert('Payment processing failed. Please try again.');
@@ -129,7 +147,7 @@ function MenuApp() {
         setIsCheckingOut(false);
       }
     } else {
-      // 🍽️ DINE-IN CHECKOUT LOGIC
+      // --- DINE-IN CHECKOUT LOGIC (Unchanged) ---
       try {
         const apiKey = import.meta.env.VITE_API_KEY;
         const sendOrderUrl = import.meta.env.VITE_SEND_ORDER_URL;
@@ -152,7 +170,7 @@ function MenuApp() {
           orderDate: new Date().toISOString(),
           orderNumber: `ORD-${Date.now()}`,
           notes: orderNote || '',
-          table: tableId, // Include the table ID in the order
+          table: tableId,
         };
         
         await Promise.all([
@@ -173,6 +191,15 @@ function MenuApp() {
     }
   };
   
+  // --- SIMPLE ROUTER FOR COMPLETION PAGE ---
+  if (window.location.pathname === '/completion') {
+    return (
+      <Elements stripe={stripePromise} options={{}}>
+        <Completion />
+      </Elements>
+    );
+  }
+
   if (isPending) return <div className="min-h-screen bg-slate-900"><LoadingSpinner /></div>;
   if (isError) return <div className="min-h-screen bg-slate-900"><ErrorMessage error={error} /></div>;
 
@@ -219,7 +246,6 @@ function MenuApp() {
         isCheckingOut={isCheckingOut}
         orderNote={orderNote}
         onNoteChange={setOrderNote}
-        // --- NEW: Pass the dynamic button text ---
         checkoutButtonText={appMode === 'takeout' ? 'Proceed to Payment' : 'Send to Kitchen'}
       />
 
@@ -229,6 +255,23 @@ function MenuApp() {
         item={selectedItem}
         onAddToCart={addToCart}
       />
+
+      {/* --- NEW STRIPE CHECKOUT MODAL --- */}
+      {clientSecret && isCheckoutModalOpen && (
+        <>
+          <div className="fixed inset-0 bg-black/60 z-40" onClick={() => setIsCheckoutModalOpen(false)} />
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+            <div className="relative w-full max-w-md bg-slate-900 rounded-lg shadow-xl">
+              <div className="p-6 border-b border-slate-800">
+                <h2 className="text-xl font-semibold text-slate-50">Enter Payment Details</h2>
+              </div>
+              <Elements options={{ clientSecret }} stripe={stripePromise}>
+                <CheckoutForm />
+              </Elements>
+            </div>
+          </div>
+        </>
+      )}
 
       <style jsx>{`
         @import url('https://rsms.me/inter/inter.css');

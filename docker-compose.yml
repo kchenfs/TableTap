@@ -23,20 +23,89 @@ services:
         <<: *common-build-args
         VITE_APP_MODE: dine-in
         VITE_TABLE_ID: table-1
+        VITE_API_GATEWAY_URL: "https://097zxtivqd.execute-api.ca-central-1.amazonaws.com/PROD"
   
-  # ... Repeat for table-2 through table-11 just like table-1 ...
-  table-2: {<<: *base-service, build: {args: {<<: *common-build-args, VITE_APP_MODE: dine-in, VITE_TABLE_ID: table-2}}}
-  table-3: {<<: *base-service, build: {args: {<<: *common-build-args, VITE_APP_MODE: dine-in, VITE_TABLE_ID: table-3}}}
-  table-4: {<<: *base-service, build: {args: {<<: *common-build-args, VITE_APP_MODE: dine-in, VITE_TABLE_ID: table-4}}}
-  table-5: {<<: *base-service, build: {args: {<<: *common-build-args, VITE_APP_MODE: dine-in, VITE_TABLE_ID: table-5}}}
-  table-6: {<<: *base-service, build: {args: {<<: *common-build-args, VITE_APP_MODE: dine-in, VITE_TABLE_ID: table-6}}}
-  table-7: {<<: *base-service, build: {args: {<<: *common-build-args, VITE_APP_MODE: dine-in, VITE_TABLE_ID: table-7}}}
-  table-8: {<<: *base-service, build: {args: {<<: *common-build-args, VITE_APP_MODE: dine-in, VITE_TABLE_ID: table-8}}}
-  table-9: {<<: *base-service, build: {args: {<<: *common-build-args, VITE_APP_MODE: dine-in, VITE_TABLE_ID: table-9}}}
-  table-10: {<<: *base-service, build: {args: {<<: *common-build-args, VITE_APP_MODE: dine-in, VITE_TABLE_ID: table-10}}}
-  table-11: {<<: *base-service, build: {args: {<<: *common-build-args, VITE_APP_MODE: dine-in, VITE_TABLE_ID: table-11}}}
+  table-2:
+    <<: *base-service
+    build:
+      args:
+        <<: *common-build-args
+        VITE_APP_MODE: dine-in
+        VITE_TABLE_ID: table-2
+        VITE_API_GATEWAY_URL: "https://097zxtivqd.execute-api.ca-central-1.amazonaws.com/PROD"
+  table-3:
+    <<: *base-service
+    build:
+      args:
+        <<: *common-build-args
+        VITE_APP_MODE: dine-in
+        VITE_TABLE_ID: table-3
+        VITE_API_GATEWAY_URL: "https://097zxtivqd.execute-api.ca-central-1.amazonaws.com/PROD"
+  table-4:
+    <<: *base-service
+    build:
+      args:
+        <<: *common-build-args
+        VITE_APP_MODE: dine-in
+        VITE_TABLE_ID: table-4
+        VITE_API_GATEWAY_URL: "https://097zxtivqd.execute-api.ca-central-1.amazonaws.com/PROD"
+  table-5:
+    <<: *base-service
+    build:
+      args:
+        <<: *common-build-args
+        VITE_APP_MODE: dine-in
+        VITE_TABLE_ID: table-5
+        VITE_API_GATEWAY_URL: "https://097zxtivqd.execute-api.ca-central-1.amazonaws.com/PROD"
+  table-6:
+    <<: *base-service
+    build:
+      args:
+        <<: *common-build-args
+        VITE_APP_MODE: dine-in
+        VITE_TABLE_ID: table-6
+        VITE_API_GATEWAY_URL: "https://097zxtivqd.execute-api.ca-central-1.amazonaws.com/PROD"
+  table-7:
+    <<: *base-service
+    build:
+      args:
+        <<: *common-build-args
+        VITE_APP_MODE: dine-in
+        VITE_TABLE_ID: table-7
+        VITE_API_GATEWAY_URL: "https://097zxtivqd.execute-api.ca-central-1.amazonaws.com/PROD"
+  table-8:
+    <<: *base-service
+    build:
+      args:
+        <<: *common-build-args
+        VITE_APP_MODE: dine-in
+        VITE_TABLE_ID: table-8
+        VITE_API_GATEWAY_URL: "https://097zxtivqd.execute-api.ca-central-1.amazonaws.com/PROD"
+  table-9:
+    <<: *base-service
+    build:
+      args:
+        <<: *common-build-args
+        VITE_APP_MODE: dine-in
+        VITE_TABLE_ID: table-9
+        VITE_API_GATEWAY_URL: "https://097zxtivqd.execute-api.ca-central-1.amazonaws.com/PROD"
+  table-10:
+    <<: *base-service
+    build:
+      args:
+        <<: *common-build-args
+        VITE_APP_MODE: dine-in
+        VITE_TABLE_ID: table-10
+        VITE_API_GATEWAY_URL: "https://097zxtivqd.execute-api.ca-central-1.amazonaws.com/PROD"
+  table-11:
+    <<: *base-service
+    build:
+      args:
+        <<: *common-build-args
+        VITE_APP_MODE: dine-in
+        VITE_TABLE_ID: table-11
+        VITE_API_GATEWAY_URL: "https://097zxtivqd.execute-api.ca-central-1.amazonaws.com/PROD"
 
-  # ADD THIS NEW SERVICE FOR TAKEOUT
   takeout:
     <<: *base-service
     build:
@@ -44,8 +113,8 @@ services:
         <<: *common-build-args
         VITE_APP_MODE: takeout
         VITE_TABLE_ID: takeout
+        VITE_API_GATEWAY_URL: "https://097zxtivqd.execute-api.ca-central-1.amazonaws.com/PROD"
 
-  # Nginx reverse proxy (no changes needed here)
   nginx-proxy:
     image: nginx:alpine
     ports:
@@ -59,7 +128,6 @@ services:
     networks:
       - restaurant-network
 
-  # Certbot (no changes needed here)
   certbot:
     image: certbot/certbot
     volumes:
