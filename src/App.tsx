@@ -29,7 +29,7 @@ const queryClient = new QueryClient({
 
 // --- STRIPE SETUP ---
 // Replace with your actual Stripe publishable key
-const stripePromise = loadStripe('pk_test_...');
+const stripePromise = loadStripe('pk_test_51LbmMgEqeptNz41bu5cZPt45y509SsPIG2QScsXaVqlfycry8EqFZNGyBWgbcXf5FJQjBIXqwsr9LYWXCwVJA6yX00p6TjgTbZ');
 
 function MenuApp() {
   const { MenuItems, isError, isPending, error } = useMenu();
