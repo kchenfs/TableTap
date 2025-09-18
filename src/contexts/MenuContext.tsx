@@ -10,17 +10,13 @@ const fetchMenu = async (): Promise<APIMenuItem[]> => {
   if (!response.ok) {
     throw new Error('Network response was not ok');
   }
-  // This gets the outer object, e.g., { statusCode: 200, body: "..." }
+
+  // The API is returning a direct JSON array. 
+  // response.json() will parse it correctly.
   const data = await response.json();
 
-  // First, access the 'body' property. Then, parse the string inside it.
-  if (data && data.body) {
-    const parsedBody = JSON.parse(data.body);
-    return parsedBody || [];
-  }
-  
-  // Return an empty array if there's no body, preventing crashes
-  return [];
+  // Return the parsed data, or an empty array if it's null.
+  return data || [];
 };
 
 // --- No other changes are needed below this line ---
