@@ -44,6 +44,8 @@ RUN rm -rf ./*
 # Copy built app from builder
 COPY --from=builder /app/dist ./
 
+
+
 # Expose port 80
 EXPOSE 80
 
