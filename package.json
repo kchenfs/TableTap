@@ -4,22 +4,23 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-  "dev": "vite --host 0.0.0.0",
-  "build": "vite build",
-  "lint": "eslint .",
-  "preview": "vite preview --host 0.0.0.0 --port 3000",
-  "docker:build": "docker build -t restaurant-app .",
-  "docker:run": "docker run -p 3000:3000 restaurant-app",
-  "docker:dev": "docker-compose --profile dev up --build"
+    "dev": "vite --host 0.0.0.0",
+    "build": "vite build",
+    "lint": "eslint .",
+    "preview": "vite preview --host 0.0.0.0 --port 3000",
+    "docker:build": "docker build -t restaurant-app .",
+    "docker:run": "docker run -p 3000:3000 restaurant-app",
+    "docker:dev": "docker-compose --profile dev up --build"
   },
   "dependencies": {
+    "@stripe/react-stripe-js": "^4.0.1",
+    "@stripe/stripe-js": "^7.9.0",
     "@tanstack/react-query": "^5.85.6",
     "axios": "^1.6.0",
-    "lucide-react": "^0.344.0",
+    "lucide-react": "^0.544.0",
+    "nanoid": "^5.0.1",
     "react": "^18.3.1",
-    "react-dom": "^18.3.1",
-    "@stripe/react-stripe-js": "^4.0.1", 
-    "@stripe/stripe-js": "^7.9.0"       
+    "react-dom": "^18.3.1"
   },
   "devDependencies": {
     "@eslint/js": "^9.9.1",
