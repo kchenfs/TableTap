@@ -1,7 +1,14 @@
 import React, { useState } from 'react';
-import { PaymentElement, useStripe, useElements, AddressElement } from '@stripe/react-stripe-js';
+import { 
+  PaymentElement, 
+  useStripe, 
+  useElements, 
+  AddressElement,
+  LinkAuthenticationElement,
+  ExpressCheckoutElement
+} from '@stripe/react-stripe-js';
 import { CartItem } from '../types';
-import { nanoid } from 'nanoid'; // <-- Import nanoid
+import { nanoid } from 'nanoid';
 
 interface CheckoutFormProps {
   cart: CartItem[];
@@ -25,7 +32,6 @@ export default function CheckoutForm({ cart, total, orderNote }: CheckoutFormPro
 
     setIsLoading(true);
 
-    // **MODIFIED**: Generate a 5-character alphanumeric ID using nanoid.
     const orderId = nanoid(5).toUpperCase();
 
     // Step 1: Create the PaymentIntent on your server
@@ -76,10 +82,27 @@ export default function CheckoutForm({ cart, total, orderNote }: CheckoutFormPro
 
   return (
     <form id="payment-form" onSubmit={handleSubmit} className="p-6">
+      
+      {/* --- EXPRESS CHECKOUT & LINK --- */}
+      <h3 className="text-lg font-medium text-slate-200 mb-4">Express Checkout</h3>
+      <LinkAuthenticationElement className="mb-4" />
+      <ExpressCheckoutElement />
+      
+      <div className="relative my-6">
+        <div className="absolute inset-0 flex items-center" aria-hidden="true">
+          <div className="w-full border-t border-slate-700" />
+        </div>
+        <div className="relative flex justify-center">
+          <span className="bg-slate-900 px-2 text-sm text-slate-400">Or pay with card</span>
+        </div>
+      </div>
+
+      {/* --- MANUAL PAYMENT DETAILS --- */}
       <h3 className="text-lg font-medium text-slate-200 mb-4">Contact & Billing</h3>
       <AddressElement options={{mode: 'billing'}} />
       <h3 className="text-lg font-medium text-slate-200 mt-6 mb-4">Payment</h3>
-      <PaymentElement id="payment-element" options={{ layout: "tabs" }} />
+      <PaymentElement id="payment-element" />
+
       <button
         disabled={isLoading || !stripe || !elements}
         id="submit"
