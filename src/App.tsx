@@ -29,7 +29,7 @@ const queryClient = new QueryClient({
   },
 });
 
-const stripePromise = loadStripe('pk_test_51LbmMgEqeptNz41bu5cZPt45y509SsPIG2QScsXaVqlfycry8EqFZNGyBWgbcXf5FJQjBIXqwsr9LYWXCwVJA6yX00p6TjgTbZ');
+const stripePromise = loadStripe('pk_live_51LbmMgEqeptNz41bIEu1GF3KnNZdo1bJQ1yQ4ClMOLbfHbUj56bJZcPvUTKyWLL5il9qLWHHXu1mFjeSKmAXeHGI00DZsghsLM');
 
 function MenuApp() {
   const { MenuItems, isError, isPending, error } = useMenu();
