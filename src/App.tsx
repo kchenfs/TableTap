@@ -12,7 +12,7 @@ import { organizeMenuByCategory } from './utils/menuUtils';
 import { CartItem, MenuItem } from './types';
 import ItemOptionsModal from './components/ItemOptionsModal';
 import { nanoid } from 'nanoid';
-import { X } from 'lucide-react'; // <-- Import the X icon
+import { X } from 'lucide-react';
 
 // --- STRIPE IMPORTS ---
 import { loadStripe, StripeElementsOptions } from '@stripe/stripe-js';
@@ -204,7 +204,6 @@ function MenuApp() {
     amount: Math.round(total * 100),
     currency: 'cad',
     appearance: appearanceOptions,
-    paymentMethodOrder: ['apple_pay', 'google_pay', 'card']
   };
 
   if (window.location.pathname === '/completion') {
@@ -275,20 +274,21 @@ function MenuApp() {
         <>
           <div className="fixed inset-0 bg-black/60 z-40" onClick={() => setIsCheckoutModalOpen(false)} />
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-            <div className="relative w-full max-w-md bg-slate-900 rounded-lg shadow-xl">
-              {/* --- X BUTTON ADDED HERE --- */}
-              <button
-                onClick={() => setIsCheckoutModalOpen(false)}
-                className="absolute top-4 right-4 p-2 rounded-lg text-slate-400 hover:bg-slate-800 transition-colors z-10"
-              >
-                <X className="h-5 w-5"/>
-              </button>
-              <div className="p-6 border-b border-slate-800">
+            <div className="relative w-full max-w-md bg-slate-900 rounded-lg shadow-xl flex flex-col max-h-[90vh]">
+              <div className="flex-shrink-0 p-6 border-b border-slate-800 flex items-center justify-between">
                 <h2 className="text-xl font-semibold text-slate-50">Enter Payment Details</h2>
+                <button
+                  onClick={() => setIsCheckoutModalOpen(false)}
+                  className="p-2 rounded-lg text-slate-400 hover:bg-slate-800 transition-colors z-10"
+                >
+                  <X className="h-5 w-5"/>
+                </button>
               </div>
-              <Elements stripe={stripePromise} options={stripeOptions}>
-                <CheckoutForm cart={cart} total={total} orderNote={orderNote}/>
-              </Elements>
+              <div className="flex-grow overflow-y-auto">
+                <Elements stripe={stripePromise} options={stripeOptions}>
+                  <CheckoutForm cart={cart} total={total} orderNote={orderNote}/>
+                </Elements>
+              </div>
             </div>
           </div>
         </>

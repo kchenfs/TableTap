@@ -83,7 +83,6 @@ export default function CheckoutForm({ cart, total, orderNote }: CheckoutFormPro
   return (
     <form id="payment-form" onSubmit={handleSubmit} className="p-6">
       
-      {/* --- EXPRESS CHECKOUT & LINK --- */}
       <h3 className="text-lg font-medium text-slate-200 mb-4">Express Checkout</h3>
       <LinkAuthenticationElement className="mb-4" />
       <ExpressCheckoutElement />
@@ -97,7 +96,6 @@ export default function CheckoutForm({ cart, total, orderNote }: CheckoutFormPro
         </div>
       </div>
 
-      {/* --- MANUAL PAYMENT DETAILS --- */}
       <h3 className="text-lg font-medium text-slate-200 mb-4">Contact & Billing</h3>
       <AddressElement options={{mode: 'billing'}} />
       <h3 className="text-lg font-medium text-slate-200 mt-6 mb-4">Payment</h3>
