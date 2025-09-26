@@ -23,3 +23,12 @@ dist-ssr
 *.sln
 *.sw?
 .env
+
+
+#Certs
+
+153975d756b52c7e5b2d82c5540b5734cd5cac8c6ead7f0bdd73f72799e77afd-certificate.pem.crt
+153975d756b52c7e5b2d82c5540b5734cd5cac8c6ead7f0bdd73f72799e77afd-private.pem.key
+153975d756b52c7e5b2d82c5540b5734cd5cac8c6ead7f0bdd73f72799e77afd-public.pem.key
+AmazonRootCA1.pem
+AmazonRootCA3 (1).pem
