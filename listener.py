@@ -7,6 +7,35 @@ import time
 import json
 import signal
 from escpos.printer import Usb
+# Add this near the top of your script
+import logging
+
+logging.basicConfig(
+    filename='printer_listener.log', # Log file will be created in the same directory
+    level=logging.INFO,
+    format='%(asctime)s - %(levelname)s - %(message)s',
+    datefmt='%Y-%m-%d %H:%M:%S'
+)
+
+# --- Replace print with logging ---
+
+# Example of replacing a print statement:
+# Old: print("✓ Printer initialized successfully")
+# New:
+logging.info("Printer initialized successfully")
+
+# For errors, use logging.error or logging.exception
+# Old: print(f"ERROR: Could not print order. Reason: {e}")
+# New:
+logging.error(f"Could not print order.", exc_info=True) # exc_info=True logs the full error traceback
+
+# In your main `except` block:
+# Old: print(f"An unexpected error occurred: {e}")
+# New:
+logging.critical("A critical error occurred in the main loop.", exc_info=True)
+
+
+
 
 # --- Configuration ---
 ENDPOINT = "a2ucwnwtscss1f-ats.iot.ca-central-1.amazonaws.com"

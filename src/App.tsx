@@ -130,8 +130,7 @@ function MenuApp() {
     } else {
       try {
         const apiKey = import.meta.env.VITE_API_KEY;
-        const sendOrderUrl = import.meta.env.VITE_SEND_ORDER_URL;
-        const saveOrderUrl = import.meta.env.VITE_SAVE_ORDER_URL;
+        const TableTapUrl = import.meta.env.VITE_TABLE_TAP_URL;
         const headers = { 'Content-Type': 'application/json', 'x-api-key': apiKey };
 
         const orderData = {
@@ -153,10 +152,7 @@ function MenuApp() {
           table: tableId,
         };
 
-        await Promise.all([
-          axios.post(sendOrderUrl, orderData, { headers }),
-          axios.post(saveOrderUrl, orderData, { headers })
-        ]);
+        await axios.post(TableTapUrl, orderData, { headers });
 
         setCart([]);
         setIsCartOpen(false);

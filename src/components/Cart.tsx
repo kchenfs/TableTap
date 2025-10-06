@@ -8,7 +8,7 @@ interface CartProps {
   cart: CartItem[];
   onUpdateQuantity: (cartId: string, quantity: number) => void;
   onRemoveItem: (cartId: string) => void;
-  onCheckout: (cart: CartItem[], total: number) => Promise<void>;
+  onCheckout: () => Promise<void>;
   isCheckingOut?: boolean;
   orderNote: string;
   onNoteChange: (note: string) => void;
@@ -131,7 +131,7 @@ export default function Cart({
                 disabled={isCheckingOut}
               />
               <button
-                onClick={() => onCheckout(cart, totalWithTax)}
+                onClick={onCheckout}
                 disabled={isCheckingOut}
                 className="w-full rounded-lg bg-slate-200 py-3 font-semibold text-slate-900 disabled:opacity-50"
               >
