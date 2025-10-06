@@ -30,7 +30,7 @@ export default function CheckoutForm({ cart, total, orderNote }: CheckoutFormPro
   // This function contains the duplicated logic for creating a Payment Intent.
   const createPaymentIntent = async (receiptEmail?: string) => {
     try {
-      const paymentApiUrl = `${import.meta.env.VITE_API_GATEWAY_URL}/create-payment-intent`;
+      const paymentApiUrl = import.meta.env.VITE_API_GATEWAY_URL;
       const orderId = nanoid(5).toUpperCase();
 
       const res = await fetch(paymentApiUrl, {
