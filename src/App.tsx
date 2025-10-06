@@ -150,6 +150,7 @@ function MenuApp() {
           orderNumber: nanoid(5).toUpperCase(),
           notes: orderNote || '',
           table: tableId,
+          orderType: appMode, // This is the added line
         };
 
         await axios.post(TableTapUrl, orderData, { headers });

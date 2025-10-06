@@ -1,11 +1,15 @@
-# listener.py
+# listener.py (Upgraded Version with Modern Printing)
+
+import os
+import json
+import time
+import signal
+import logging
+import threading
+from datetime import datetime
+from concurrent.futures import Future
 from awsiot import mqtt5_client_builder
 from awscrt import mqtt5
-import threading
-from concurrent.futures import Future
-import time
-import json
-import signal
 from escpos.printer import Usb
 # Add this near the top of your script
 import logging
@@ -37,124 +41,155 @@ logging.critical("A critical error occurred in the main loop.", exc_info=True)
 
 
 
-# --- Configuration ---
+# --- Automatic Path Configuration ---
+script_dir = os.path.dirname(os.path.abspath(__file__))
+
+# --- Logging Setup ---
+log_path = os.path.join(script_dir, 'printer_listener.log')
+logging.basicConfig(
+    filename=log_path,
+    level=logging.INFO,
+    format='%(asctime)s - %(levelname)s - %(message)s',
+    datefmt='%Y-%m-%d %H:%M:%S'
+)
+
+# --- Main Configuration ---
 ENDPOINT = "a2ucwnwtscss1f-ats.iot.ca-central-1.amazonaws.com"
 CLIENT_ID = "my_rp326_printer"
-PATH_TO_CERTIFICATE = "C:/Users/ken.chen/OneDrive - Canadian Tire/Desktop/AWS IoT Project/153975d756b52c7e5b2d82c5540b5734cd5cac8c6ead7f0bdd73f72799e77afd-certificate.pem.crt"
-PATH_TO_PRIVATE_KEY = "C:/Users/ken.chen/OneDrive - Canadian Tire/Desktop/AWS IoT Project/153975d756b52c7e5b2d82c5540b5734cd5cac8c6ead7f0bdd73f72799e77afd-private.pem.key"
-PATH_TO_AMAZON_ROOT_CA_1 = "C:/Users/ken.chen/OneDrive - Canadian Tire/Desktop/AWS IoT Project/AmazonRootCA1.pem"
-
-# UPDATED: Define a single topic to listen to
+PATH_TO_CERTIFICATE = os.path.join(script_dir, "153975d756b52c7e5b2d82c5540b5734cd5cac8c6ead7f0bdd73f72799e77afd-certificate.pem.crt")
+PATH_TO_PRIVATE_KEY = os.path.join(script_dir, "153975d756b52c7e5b2d82c5540b5734cd5cac8c6ead7f0bdd73f72799e77afd-private.pem.key")
+PATH_TO_AMAZON_ROOT_CA_1 = os.path.join(script_dir, "AmazonRootCA1.pem")
 PRINTER_TOPIC = "printers/orders/print"
-
 TIMEOUT = 100
+
+# --- Globals ---
 shutdown_event = threading.Event()
 future_stopped = Future()
 future_connection_success = Future()
 p = None
 
-# --- Printer Logic (Simplified) ---
-def print_order(items, notes):
-    """Print a single, complete order receipt."""
+# --- NEW: Modern Printer Logic ---
+def print_order(order_data):
+    """Prints a single, complete order with modern formatting."""
     if p is None:
-        print("Printer not initialized. Logging order to console.")
-        print("\n--- CONSOLE FALLBACK ---\n")
-        print("NEW ORDER")
-        if notes:
-            print(f"NOTES: {notes}")
-        print("ITEMS:")
-        for item in items:
-            print(f"  - {item.get('name', 'Unknown Item')} (Qty: {item.get('quantity', 1)})")
-        print("\n------------------------\n")
+        logging.warning("Printer not initialized. Cannot print order.")
         return False
-        
+
     try:
-        print("Printing new order...")
+        logging.info("Printing new modern order...")
+
+        # Extract data from the payload
+        items = order_data.get('items', [])
+        notes = order_data.get('notes', '')
+        order_type = order_data.get('orderType', 'dine-in').upper()
+        table = order_data.get('table', 'N/A')
+        order_number = order_data.get('orderNumber', '----')
+
+        # --- Receipt Header ---
         p.set(align='center', font='a', bold=True, width=2, height=2)
-        p.text("NEW ORDER\n") # Simplified header
+        p.text(f"{order_type} ORDER\n")
+
+        # --- Order Details ---
         p.set(align='center', font='a', bold=False, width=1, height=1)
         p.text("=" * 42 + "\n")
-        
-        p.set(align='left', font='b', bold=True, width=1, height=2)
-        if notes:
-            p.text(f"NOTES: {notes}\n")
-        else:
-            p.text("No special notes.\n")
+
+        if order_type == 'DINE-IN':
+            p.set(align='left', font='a', bold=True, width=2, height=2)
+            table_name = table.replace('table-', 'Table ')
+            p.text(f"{table_name}\n")
+        else: # Takeout
+            p.set(align='left', font='a', bold=True, width=2, height=2)
+            p.text("TAKEOUT\n")
+            p.set(align='left', font='b', bold=True, width=1, height=1)
+            p.text("-- PAID --\n")
+
         p.set(align='center', font='a', bold=False, width=1, height=1)
+        p.text("-" * 42 + "\n")
+        p.set(align='left', font='b')
+        p.text(f"Order #: {order_number}\n")
+        p.text(f"Time: {datetime.now().strftime('%I:%M %p')}\n")
         p.text("=" * 42 + "\n\n")
-        
+
+        # --- Special Notes ---
+        if notes:
+            p.set(align='center', font='a', bold=True, width=1, height=2)
+            p.text("!! NOTES !!\n")
+            p.set(align='left', font='b', bold=True, width=1, height=1)
+            p.text(f"{notes}\n")
+            p.text("=" * 42 + "\n\n")
+
+        # --- Item List ---
         if not items:
             p.text("No items in this order.\n")
         else:
-            for i, item in enumerate(items, 1):
+            for item in items:
                 item_name = item.get('name', 'Unknown Item')
                 quantity = item.get('quantity', 1)
-                
-                p.set(align='left', font='a', bold=True, width=1, height=1)
-                p.text(f"{i}. {item_name} (Qty: {quantity})\n\n")
-        
-        p.set(align='center')
-        p.text("=" * 42 + "\n")
-        p.text(f"Printed: {time.strftime('%Y-%m-%d %H:%M:%S')}\n\n")
+                options = item.get('options', '')
+
+                p.set(align='left', font='a', bold=True, width=2, height=2)
+                p.text(f"{quantity}x {item_name}\n")
+
+                if options:
+                    p.set(align='left', font='b', bold=False, width=1, height=1)
+                    # Indent options for clarity
+                    formatted_options = options.replace('; ', '\n  - ')
+                    p.text(f"  - {formatted_options}\n")
+                p.text("\n") # Add space between items
+
+        # --- Footer ---
         p.cut()
         return True
     except Exception as e:
-        print(f"ERROR: Could not print order. Reason: {e}")
+        logging.error("Could not print order.", exc_info=True)
         return False
 
-# --- MQTT5 Callbacks (Simplified) ---
+# --- MQTT5 Callback ---
 def on_publish_received(publish_packet_data):
     """Callback when a new order is received."""
     publish_packet = publish_packet_data.publish_packet
-    topic = publish_packet.topic
     payload = publish_packet.payload
-    
-    print(f"\nReceived message from topic: '{topic}'")
-    
+    logging.info(f"Received message from topic: '{publish_packet.topic}'")
+
     try:
         order_data = json.loads(payload)
-        items = order_data.get('items', [])
-        notes = order_data.get('notes', '')
+        logging.info(f"Processing order: {order_data.get('orderNumber', 'N/A')}")
         
-        print(f"Processing order with {len(items)} items.")
-        
-        if print_order(items, notes):
-            print("✓ Order printed successfully")
+        if print_order(order_data):
+            logging.info("✓ Order printed successfully")
         else:
-            print("✗ Failed to print order")
-            
-    except Exception as e:
-        print(f"ERROR: An unexpected error occurred. Reason: {e}")
+            logging.warning("✗ Failed to print order")
 
-# ... (Lifecycle callbacks remain the same) ...
+    except Exception as e:
+        logging.error("An unexpected error occurred in on_publish_received.", exc_info=True)
+
+# --- Lifecycle Callbacks (No changes needed) ---
 def on_lifecycle_stopped(lifecycle_stopped_data: mqtt5.LifecycleStoppedData):
-    print("Lifecycle Stopped")
+    logging.info("Lifecycle Stopped")
     future_stopped.set_result(lifecycle_stopped_data)
 
 def on_lifecycle_connection_success(lifecycle_connect_success_data: mqtt5.LifecycleConnectSuccessData):
-    print("Lifecycle Connection Success")
+    logging.info("Lifecycle Connection Success")
     if not future_connection_success.done():
         future_connection_success.set_result(lifecycle_connect_success_data)
 
 def on_lifecycle_connection_failure(lifecycle_connection_failure: mqtt5.LifecycleConnectFailureData):
-    print(f"Lifecycle Connection Failure: {lifecycle_connection_failure.exception}")
-    if hasattr(lifecycle_connection_failure, 'connack_packet'):
-        print(f"CONNACK Reason Code: {lifecycle_connection_failure.connack_packet.reason_code}")
+    logging.error(f"Lifecycle Connection Failure: {lifecycle_connection_failure.exception}")
 
 def signal_handler(sig, frame):
-    print("\nCtrl+C pressed. Shutting down gracefully...")
+    logging.info("\nShutdown signal received. Shutting down gracefully...")
     shutdown_event.set()
 
-# --- Main Execution ---
+# --- Main Execution (No changes needed) ---
 if __name__ == '__main__':
-    print("\nStarting Unified MQTT Printer Client\n")
+    logging.info("\n--- Starting Unified MQTT Printer Client ---")
     signal.signal(signal.SIGINT, signal_handler)
 
     try:
         p = Usb(0x0FE6, 0x811E, profile="RP326")
-        print("✓ Printer initialized successfully")
+        logging.info("✓ Printer initialized successfully")
     except Exception as e:
-        print(f"WARNING: Could not initialize printer: {e}")
+        logging.warning(f"Could not initialize printer: {e}", exc_info=True)
         p = None
 
     client = None
@@ -170,33 +205,26 @@ if __name__ == '__main__':
             on_lifecycle_connection_failure=on_lifecycle_connection_failure,
             client_id=CLIENT_ID
         )
-        print("✓ MQTT5 Client created")
+        logging.info("✓ MQTT5 Client created")
 
-        print(f"Connecting to {ENDPOINT}...")
+        logging.info(f"Connecting to {ENDPOINT}...")
         client.start()
-        
         future_connection_success.result(TIMEOUT)
-        print("✓ Connected to AWS IoT Core!")
+        logging.info("✓ Connected to AWS IoT Core!")
 
-        print(f"Subscribing to topic '{PRINTER_TOPIC}'...")
+        logging.info(f"Subscribing to topic '{PRINTER_TOPIC}'...")
         subscribe_future = client.subscribe(subscribe_packet=mqtt5.SubscribePacket(
-            subscriptions=[
-                mqtt5.Subscription(topic_filter=PRINTER_TOPIC, qos=mqtt5.QoS.AT_LEAST_ONCE)
-            ]
+            subscriptions=[mqtt5.Subscription(topic_filter=PRINTER_TOPIC, qos=mqtt5.QoS.AT_LEAST_ONCE)]
         ))
         suback = subscribe_future.result(TIMEOUT)
-        print(f"✓ Subscribed with {suback.reason_codes[0]}")
-
-        print("\n🖨️  Printer is ready and waiting for orders...")
-        print("Press Ctrl+C to exit")
-        
+        logging.info(f"✓ Subscribed with {suback.reason_codes[0]}")
+        logging.info("\n🖨️  Printer is ready and waiting for orders...")
         shutdown_event.wait()
-
     except Exception as e:
-        print(f"An unexpected error occurred: {e}")
+        logging.critical(f"A critical error occurred in the main loop: {e}", exc_info=True)
     finally:
         if client:
-            print("Stopping client...")
+            logging.info("Stopping client...")
             client.stop()
             future_stopped.result(TIMEOUT)
-            print("✓ Client stopped")
+            logging.info("✓ Client stopped")
