@@ -83,7 +83,7 @@ def print_order(order_data):
         notes = order_data.get('notes', '')
         order_type = order_data.get('orderType', 'dine-in').upper()
         table = order_data.get('table', 'N/A')
-        order_number = order_data.get('orderNumber', '----')
+        order_number = order_data.get('order_id', '----')
 
         # --- Receipt Header ---
         p.set(align='center', font='a', bold=True, width=2, height=2)

@@ -147,7 +147,7 @@ function MenuApp() {
           })),
           total,
           orderDate: new Date().toISOString(),
-          orderNumber: nanoid(5).toUpperCase(),
+          order_id: nanoid(5).toUpperCase(),
           notes: orderNote || '',
           table: tableId,
           orderType: appMode, // This is the added line
