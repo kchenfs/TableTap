@@ -62,6 +62,7 @@ export default function CheckoutForm({ cart, total, orderNote }: CheckoutFormPro
         body: JSON.stringify({
           items: cart,
           metadata: { order_id: orderId },
+          notes: orderNote, // <-- ADD THIS LINE
           customerDetails: {
               email: customerDetails?.email || undefined,
               phone: customerDetails?.phone || undefined,
