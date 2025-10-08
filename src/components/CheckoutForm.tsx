@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import {
   PaymentElement,
   useStripe,
@@ -18,17 +18,40 @@ export default function CheckoutForm({ cart, total, orderNote }: CheckoutFormPro
   const stripe = useStripe();
   const elements = useElements();
 
-  const [name, setName] = useState('');
-  const [email, setEmail] = useState('');
-  const [message, setMessage] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
+  const [email, setEmail] = React.useState('');
+  const [phone, setPhone] = React.useState(''); // New state for phone number
+  const [message, setMessage] = React.useState<string | null>(null);
+  const [isLoading, setIsLoading] = React.useState(false);
   
-  // This useEffect block remains the same
-  useEffect(() => { /* ... */ }, [stripe]);
-
-  // --- 1. CREATE A REUSABLE HELPER FUNCTION ---
-  // This function contains the duplicated logic for creating a Payment Intent.
-  const createPaymentIntent = async (receiptEmail?: string) => {
+  React.useEffect(() => {
+    if (!stripe) {
+      return;
+    }
+    const clientSecret = new URLSearchParams(window.location.search).get(
+      "payment_intent_client_secret"
+    );
+    if (!clientSecret) {
+      return;
+    }
+    stripe.retrievePaymentIntent(clientSecret).then(({ paymentIntent }) => {
+      switch (paymentIntent?.status) {
+        case "succeeded":
+          setMessage("Payment succeeded!");
+          break;
+        case "processing":
+          setMessage("Your payment is processing.");
+          break;
+        case "requires_payment_method":
+          setMessage("Your payment was not successful, please try again.");
+          break;
+        default:
+          setMessage("Something went wrong.");
+          break;
+      }
+    });
+  }, [stripe]);
+  
+  const createPaymentIntent = async (customerDetails?: { email?: string, phone?: string }) => {
     try {
       const paymentApiUrl = import.meta.env.VITE_API_GATEWAY_URL;
       const orderId = nanoid(5).toUpperCase();
@@ -39,11 +62,13 @@ export default function CheckoutForm({ cart, total, orderNote }: CheckoutFormPro
         body: JSON.stringify({
           items: cart,
           metadata: { order_id: orderId },
-          // Conditionally add the email if it's provided
-          ...(receiptEmail && { receipt_email: receiptEmail }),
+          customerDetails: {
+              email: customerDetails?.email || undefined,
+              phone: customerDetails?.phone || undefined,
+          }
         }),
       });
-
+      
       const data = await res.json();
       if (data.error) {
         throw new Error(data.error);
@@ -57,10 +82,9 @@ export default function CheckoutForm({ cart, total, orderNote }: CheckoutFormPro
     }
   };
 
-  // --- 2. UPDATE THE ORIGINAL HANDLERS TO USE THE HELPER ---
   const handleManualSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!stripe || !elements || !name || !email) return;
+    if (!stripe || !elements) return;
 
     setIsLoading(true);
 
@@ -71,8 +95,7 @@ export default function CheckoutForm({ cart, total, orderNote }: CheckoutFormPro
       return;
     }
 
-    // Call the reusable helper function
-    const clientSecret = await createPaymentIntent(email);
+    const clientSecret = await createPaymentIntent({ email, phone });
 
     if (clientSecret) {
       const { error } = await stripe.confirmPayment({
@@ -80,7 +103,6 @@ export default function CheckoutForm({ cart, total, orderNote }: CheckoutFormPro
         clientSecret,
         confirmParams: {
           return_url: `${window.location.origin}/completion`,
-          receipt_email: email,
         },
       });
       if (error.type === "card_error" || error.type === "validation_error") {
@@ -96,7 +118,6 @@ export default function CheckoutForm({ cart, total, orderNote }: CheckoutFormPro
     if (!stripe || !elements) return;
     setIsLoading(true);
     
-    // Call the reusable helper function
     const clientSecret = await createPaymentIntent();
 
     if (clientSecret) {
@@ -140,24 +161,21 @@ export default function CheckoutForm({ cart, total, orderNote }: CheckoutFormPro
 
       <form id="payment-form" onSubmit={handleManualSubmit}>
         <h3 className="text-lg font-medium text-slate-200 mb-4">Payment Details</h3>
-        <PaymentElement id="payment-element" />
+        <PaymentElement 
+          id="payment-element" 
+          options={{
+            fields: {
+              name: 'auto'
+            },
+            layout: {
+              type: 'tabs',
+              defaultCollapsed: false,
+            }
+          }} 
+        />
 
-        <h3 className="text-lg font-medium text-slate-200 mt-6 mb-4">Contact Info</h3>
+        <h3 className="text-lg font-medium text-slate-200 mt-6 mb-4">Contact Info (Optional)</h3>
         <div className="space-y-4">
-          <div>
-            <label htmlFor="name" className="block text-sm font-medium text-slate-300 mb-1">
-              Full Name
-            </label>
-            <input
-              id="name"
-              type="text"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              required
-              className="block w-full rounded-lg border-0 bg-slate-800 py-2.5 px-4 text-sm text-slate-50 ring-1 ring-slate-100/10 placeholder:text-slate-400 focus:ring-2 focus:ring-inset focus:ring-sky-500 transition"
-              placeholder="Jane Doe"
-            />
-          </div>
           <div>
             <label htmlFor="email" className="block text-sm font-medium text-slate-300 mb-1">
               Email Address for Receipt
@@ -167,9 +185,21 @@ export default function CheckoutForm({ cart, total, orderNote }: CheckoutFormPro
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              required
               className="block w-full rounded-lg border-0 bg-slate-800 py-2.5 px-4 text-sm text-slate-50 ring-1 ring-slate-100/10 placeholder:text-slate-400 focus:ring-2 focus:ring-inset focus:ring-sky-500 transition"
               placeholder="jane.doe@example.com"
+            />
+          </div>
+          <div>
+            <label htmlFor="phone" className="block text-sm font-medium text-slate-300 mb-1">
+              Phone Number
+            </label>
+            <input
+              id="phone"
+              type="tel"
+              value={phone}
+              onChange={(e) => setPhone(e.target.value)}
+              className="block w-full rounded-lg border-0 bg-slate-800 py-2.5 px-4 text-sm text-slate-50 ring-1 ring-slate-100/10 placeholder:text-slate-400 focus:ring-2 focus:ring-inset focus:ring-sky-500 transition"
+              placeholder="(555) 123-4567"
             />
           </div>
         </div>
