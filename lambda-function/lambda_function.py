@@ -224,6 +224,69 @@ def lambda_handler(event, context):
     logger.info(f"DYNAMODB_TABLE_NAME: {DYNAMODB_TABLE_NAME}")
     logger.info(f"PRINTER_TOPIC: {PRINTER_TOPIC}")
     
+    # Define CORS headers. Use your specific domain for better security.
+    headers = {
+        "Access-Control-Allow-Origin": "https://dine-in.momotarosushi.ca",
+        "Access-Control-Allow-Headers": "Content-Type",
+        "Access-Control-Allow-Methods": "POST, OPTIONS"
+    }
+    
+    try:
+        if 'stripe-signature' in event.get('headers', {}):
+            payload = event['body']
+            sig_header = event['headers']['stripe-signature']
+            stripe_event = stripe.Webhook.construct_event(payload=payload, sig_header=sig_header, secret=webhook_secret)
+
+            if stripe_event['type'] == 'payment_intent.succeeded':
+                payment_intent = stripe_event['data']['object']
+                metadata = dict(payment_intent.get('metadata', {}))
+                
+                latest_charge_id = payment_intent.get('latest_charge')
+                customer_email, customer_name, payment_details = None, None, {}
+
+                if latest_charge_id:
+                    try:
+                        charge = stripe.Charge.retrieve(latest_charge_id)
+                        customer_email = charge.billing_details.get('email')
+                        customer_name = charge.billing_details.get('name')
+                        payment_details = charge.payment_method_details
+                        logger.info(f"Successfully retrieved Charge {latest_charge_id}")
+                    except Exception as e:
+                        logger.error(f"Could not retrieve charge {latest_charge_id}: {e}")
+                
+                order_data = {
+                    'receipt_email': customer_email,
+                    'customerName': customer_name,
+                    'paymentId': payment_intent['id'],
+                    'paymentStatus': 'PAID',
+                    'transaction_timestamp': payment_intent.get('created'),
+                    **metadata
+                }
+                
+                process_order(order_data, payment_details)
+        else:
+            # Handle Dine-In API calls
+            order_data = json.loads(event['body'])
+            order_data['paymentStatus'] = 'Dine-In'
+            process_order(order_data, {})
+
+        # Add headers to the success response
+        return {
+            'statusCode': 200,
+            'headers': headers,
+            'body': json.dumps({'message': 'Order processed successfully'})
+        }
+        
+    except Exception as e:
+        logger.error("Critical error in lambda_handler", exc_info=True)
+        # Add headers to the error response as well
+        return {
+            'statusCode': 500,
+            'headers': headers,
+            'body': json.dumps({'error': 'An internal server error occurred.'})
+        }
+    logger.info(f"PRINTER_TOPIC: {PRINTER_TOPIC}")
+    
     try:
         if 'stripe-signature' in event.get('headers', {}):
             payload = event['body']
