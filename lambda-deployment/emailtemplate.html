@@ -1,203 +1,87 @@
-<html lang="en"><head>
+<!DOCTYPE html>
+<html lang="en">
+<head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Receipt — Streamlined Summary</title>
+    <title>Receipt — Momotaro Sushi</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&amp;display=swap" rel="stylesheet">
-    <script src="https://cdn.tailwindcss.com"></script>
-  </head>
-
-  <body class="h-full bg-gradient-to-b from-slate-50 to-white text-slate-900 antialiased" style="font-family: Inter, ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial">
-    <main class="mx-auto max-w-4xl px-4 py-10 md:py-14">
-      <div class="relative overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm">
-        <div class="relative w-full bg-gradient-to-br from-slate-800 via-slate-700 to-slate-900">
-          <div class="px-6 py-8 md:px-8 md:py-10">
-            <div class="flex flex-col items-center text-center">
-              <img src="https://images.unsplash.com/photo-1542751371-adc38448a05e?q=80&amp;w=256&amp;auto=format&amp;fit=crop" alt="Merchant avatar" class="h-20 w-20 rounded-full border-4 border-white shadow-md object-cover">
-              <h1 class="mt-3 text-3xl md:text-4xl font-semibold tracking-tight text-white">Momotaro Sushi</h1>
-              <p class="mt-1 text-xs md:text-sm text-slate-200/90">Receipt #__RECEIPT_ID_PLACEHOLDER__</p>
-
-              <div class="mt-5 w-full max-w-xl">
-                <div class="rounded-xl border border-white/15 bg-white/5 px-4 py-3 backdrop-blur supports-[backdrop-filter]:bg-white/10">
-                  <div class="flex items-start gap-3">
-                    <div class="shrink-0 rounded-md bg-white/10 p-1.5">
-                      <i data-lucide="sticky-note" class="h-4 w-4 text-white"></i>
-                    </div>
-                    <div class="min-w-0 text-left">
-                      <div class="text-[11px] font-medium uppercase tracking-wide text-slate-300">Order notes</div>
-                      <p id="orderNotes" class="mt-0.5 text-sm md:text-base font-normal text-slate-100">—</p>
-                      <p class="mt-2 text-sm md:text-base font-medium text-slate-100">Thank you! We appreciate your business.</p>
-                    </div>
-                  </div>
-                </div>
-              </div>
-              </div>
-          </div>
-        </div>
-
-        <div class="px-6 pb-6 pt-0 md:px-8">
-          <div class="mt-6 rounded-2xl border border-slate-200/80 bg-white/80 backdrop-blur supports-[backdrop-filter]:bg-white/60 shadow-sm">
-            <div class="flex flex-col sm:flex-row sm:items-center">
-              <div class="flex min-w-0 flex-1 items-center gap-3 px-5 py-4">
-                <div class="shrink-0 rounded-lg bg-slate-900/5 p-2.5">
-                  <i data-lucide="banknote" class="h-5 w-5 text-slate-700"></i>
-                </div>
-                <div class="min-w-0">
-                  <div class="text-[11px] font-medium uppercase tracking-wide text-slate-500">Amount paid</div>
-                  <div id="amountValue" class="truncate text-xl md:text-2xl font-semibold tracking-tight text-slate-900">—</div>
-                </div>
-              </div>
-
-              <div class="hidden sm:block h-12 w-px self-center bg-slate-200/80"></div>
-
-              <div class="flex min-w-0 flex-1 items-center gap-3 px-5 py-4">
-                <div class="shrink-0 rounded-lg bg-slate-900/5 p-2.5">
-                  <i data-lucide="calendar" class="h-5 w-5 text-slate-700"></i>
-                </div>
-                <div class="min-w-0">
-                  <div class="text-[11px] font-medium uppercase tracking-wide text-slate-500">Date paid</div>
-                  <div id="dateValue" class="truncate text-base md:text-lg font-medium text-slate-900">—</div>
-                </div>
-              </div>
-
-              <div class="hidden sm:block h-12 w-px self-center bg-slate-200/80"></div>
-
-              <div class="flex min-w-0 flex-[1.2] items-center gap-3 px-5 py-4">
-                <div class="shrink-0 rounded-lg bg-slate-900/5 p-2.5">
-                  <i data-lucide="credit-card" class="h-5 w-5 text-slate-700"></i>
-                </div>
-                <div class="min-w-0">
-                  <div class="text-[11px] font-medium uppercase tracking-wide text-slate-500">Payment method</div>
-                  <div id="methodValue" class="flex flex-wrap items-center gap-2 pt-1">
-                    </div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <div class="mt-8 rounded-2xl border border-slate-200/80 bg-white/90 p-5 md:p-6 shadow-sm">
-            <h2 class="text-xl font-semibold tracking-tight text-slate-900">Summary</h2>
-            <div class="mt-4 space-y-3">
-              <div class="flex items-center justify-between text-sm">
-                <span class="text-slate-600">Subtotal</span>
-                <span class="text-slate-900 font-medium">__SUBTOTAL_PLACEHOLDER__</span>
-              </div>
-              <div class="flex items-center justify-between text-sm">
-                <span class="text-slate-600">Tax</span>
-                <span class="text-slate-900 font-medium">__TAX_PLACEHOLDER__</span>
-              </div>
-              <div class="border-t border-slate-200/80 pt-3 flex items-center justify-between">
-                <span class="text-sm text-slate-600">Total paid</span>
-                <span id="amountValueFooter" class="text-base font-semibold tracking-tight text-slate-900">—</span>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <p class="mx-auto mt-6 text-center text-xs text-slate-500">If you have questions about this charge, contact the merchant.</p>
-    </main>
-
-    <script src="https://unpkg.com/lucide@latest"></script>
-    <script>
-      // The Python Lambda will replace __PAYMENT_DATA_PLACEHOLDER__ with a JSON object
-      const payment = __PAYMENT_DATA_PLACEHOLDER__;
-
-      // Formatters
-      const formatAmount = (value, currency, locale = 'en-CA') =>
-        new Intl.NumberFormat(locale, { style: 'currency', currency }).format(value);
-
-      const formatDate = (iso, locale = 'en-CA') => {
-        const d = new Date(iso);
-        return new Intl.DateTimeFormat(locale, {
-          year: 'numeric', month: 'short', day: 'numeric',
-          hour: 'numeric', minute: '2-digit', second: '2-digit'
-        }).format(d);
-      };
-
-      // Brand chips
-      const brandChip = (brand = 'card', last4 = '') => {
-        const map = {
-          visa: { bg: 'bg-blue-600', text: 'VISA' },
-          mastercard: { bg: 'bg-orange-600', text: 'Mastercard' },
-          amex: { bg: 'bg-sky-700', text: 'AMEX' },
-          discover: { bg: 'bg-amber-600', text: 'Discover' },
-          diners: { bg: 'bg-emerald-700', text: 'Diners' },
-          jcb: { bg: 'bg-indigo-700', text: 'JCB' },
-          unionpay: { bg: 'bg-red-700', text: 'UnionPay' },
-          card: { bg: 'bg-slate-800', text: 'Card' }
-        };
-        const meta = map[brand] || map.card;
-
-        const span = document.createElement('span');
-        span.className = `inline-flex items-center gap-1 rounded-full ${meta.bg} px-2.5 py-1 text-xs font-medium text-white`;
-        span.setAttribute('aria-label', `${meta.text} ending in ${last4}`);
-        span.innerHTML = `
-          <svg viewBox="0 0 24 24" class="h-3.5 w-3.5 opacity-90" fill="currentColor" aria-hidden="true">
-            <circle cx="12" cy="12" r="10"></circle>
-          </svg>
-          <span>${meta.text}${last4 ? ' •••• ' + last4 : ''}</span>
-        `;
-        return span;
-      };
-
-      const walletChip = (wallet) => {
-        if (!wallet) return null;
-
-        const span = document.createElement('span');
-        span.className = "inline-flex items-center gap-1.5 rounded-full bg-black px-2.5 py-1 text-xs font-medium text-white";
-        span.setAttribute('aria-label', wallet.replace('_', ' '));
-
-        const iconName = wallet === 'apple_pay' ? 'apple' : 'wallet-cards';
-        span.innerHTML = `
-          <i data-lucide="${iconName}" class="h-3.5 w-3.5 text-white"></i>
-          <span class="tracking-tight">${wallet === 'apple_pay' ? 'Pay' : 'G Pay'}</span>
-        `;
-        return span;
-      };
-
-      function renderPaymentSummary(p) {
-        // Amount
-        const amountText = formatAmount(p.amount, p.currency);
-        document.getElementById('amountValue').textContent = amountText;
-        document.getElementById('amountValueFooter').textContent = amountText;
-
-        // Date
-        document.getElementById('dateValue').textContent = formatDate(p.paidAt);
-
-        // Method chips
-        const methodEl = document.getElementById('methodValue');
-        methodEl.innerHTML = '';
-
-        const chips = [];
-        const wallet = walletChip(p.method.wallet);
-        if (wallet) chips.push(wallet);
-
-        if (p.method.type === 'card') {
-          chips.push(brandChip(p.method.brand, p.method.last4));
-        } else if (p.method.type === 'bank') {
-          const bank = document.createElement('span');
-          bank.className = "inline-flex items-center gap-1.5 rounded-full bg-slate-800 px-2.5 py-1 text-xs font-medium text-white";
-          bank.innerHTML = `<i data-lucide="land-plot" class="h-3.5 w-3.5"></i><span>Bank</span>`;
-          chips.push(bank);
-        }
-
-        chips.forEach(c => methodEl.appendChild(c));
-
-        // Order notes
-        const notesEl = document.getElementById('orderNotes');
-        if (notesEl) notesEl.textContent = (p.notes && p.notes.trim()) ? p.notes : '—';
-
-        // Recreate lucide icons after dynamic insertion with 1.5 stroke width
-        if (window.lucide) window.lucide.createIcons({ attrs: { 'stroke-width': 1.5 } });
-      }
-
-      // Init
-      window.addEventListener('DOMContentLoaded', () => {
-        if (window.lucide) window.lucide.createIcons({ attrs: { 'stroke-width': 1.5 } });
-        renderPaymentSummary(payment);
-      });
-    </script>
-  
-</body></html>
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body { margin: 0; padding: 0; -webkit-font-smoothing: antialiased; font-family: 'Inter', sans-serif; }
+    </style>
+</head>
+<body style="margin: 0; padding: 0; background-color: #f8fafc;">
+    <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" style="font-family: 'Inter', sans-serif;">
+        <tr>
+            <td align="center" style="padding: 40px 16px; background-color: #f8fafc;">
+                <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" style="max-width: 600px; border-radius: 24px; border: 1px solid #e2e8f0; background-color: #ffffff; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
+                    <tr>
+                        <td style="background: linear-gradient(135deg, #1e293b 0%, #334155 100%); padding: 40px 32px; text-align: center; border-top-left-radius: 24px; border-top-right-radius: 24px;">
+                            <img src="https://momotarosushi.s3.ca-central-1.amazonaws.com/momotaro-logo.png" alt="Merchant avatar" width="80" height="80" style="width: 80px; height: 80px; border-radius: 50%; border: 4px solid #ffffff; box-shadow: 0 4px 6px rgba(0,0,0,0.1); object-fit: contain; margin: 0 auto; display: block;">
+                            <h1 style="margin: 12px 0 4px; font-size: 32px; font-weight: 600; color: #ffffff; letter-spacing: -0.025em;">Momotaro Sushi</h1>
+                            <p style="margin: 0; font-size: 13px; color: rgba(255, 255, 255, 0.85);">Order-ID #__RECEIPT_ID_PLACEHOLDER__</p>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td style="padding: 24px 32px; background-color: #ffffff;">
+                            <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" style="border-radius: 16px; border: 1px solid #e2e8f0; background-color: #f8fafc;">
+                                <tr>
+                                    <td width="33.33%" align="left" style="padding: 20px; vertical-align: top;">
+                                        <div style="font-size: 11px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.05em; color: #64748b; margin-bottom: 4px;">Amount paid</div>
+                                        <div style="font-size: 18px; font-weight: 600; color: #0f172a; letter-spacing: -0.025em;">__AMOUNT_PLACEHOLDER__</div>
+                                    </td>
+                                    <td width="33.33%" align="left" style="padding: 20px; vertical-align: top; border-left: 1px solid #e2e8f0; border-right: 1px solid #e2e8f0;">
+                                        <div style="font-size: 11px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.05em; color: #64748b; margin-bottom: 4px;">Date paid</div>
+                                        <div style="font-size: 18px; font-weight: 600; color: #0f172a;">__DATE_PLACEHOLDER__</div>
+                                    </td>
+                                    <td width="33.33%" align="left" style="padding: 20px; vertical-align: top;">
+                                        <div style="font-size: 11px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.05em; color: #64748b; margin-bottom: 4px;">Payment method</div>
+                                        <div style="padding-top: 2px;">
+                                            __PAYMENT_METHOD_CHIPS_PLACEHOLDER__
+                                        </div>
+                                    </td>
+                                </tr>
+                            </table>
+                            
+                            <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" style="margin-top: 32px; padding: 24px; border-radius: 16px; border: 1px solid #e2e8f0; background-color: #ffffff;">
+                                <tr>
+                                    <td style="font-size: 20px; font-weight: 600; color: #0f172a; padding-bottom: 16px; border-bottom: 1px solid #e2e8f0;">Summary</td>
+                                </tr>
+                                <tr>
+                                    <td style="padding: 16px 0;">
+                                        <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%">
+                                            __ITEMS_LIST_PLACEHOLDER__
+                                        </table>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td style="padding-top: 16px; border-top: 1px solid #e2e8f0;">
+                                        <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%">
+                                            <tr>
+                                                <td style="padding: 8px 0; font-size: 14px; color: #64748b;">Subtotal</td>
+                                                <td style="padding: 8px 0; font-size: 14px; color: #0f172a; font-weight: 500; text-align: right;">__SUBTOTAL_PLACEHOLDER__</td>
+                                            </tr>
+                                            <tr>
+                                                <td style="padding: 8px 0; font-size: 14px; color: #64748b;">Tax</td>
+                                                <td style="padding: 8px 0; font-size: 14px; color: #0f172a; font-weight: 500; text-align: right;">__TAX_PLACEHOLDER__</td>
+                                            </tr>
+                                            <tr>
+                                                <td style="padding-top: 16px; font-size: 14px; color: #64748b; font-weight: 600;">Total paid</td>
+                                                <td style="padding-top: 16px; font-size: 16px; font-weight: 600; color: #0f172a; text-align: right;">__AMOUNT_PLACEHOLDER__</td>
+                                            </tr>
+                                        </table>
+                                    </td>
+                                </tr>
+                            </table>
+                        </td>
+                    </tr>
+                </table>
+                 <p style="margin: 24px auto 0; text-align: center; font-size: 12px; color: #64748b;">
+                    For questions or changes to your order, please call us at (416) 766-2888.
+                </p>
+            </td>
+        </tr>
+    </table>
+</body>
+</html>
