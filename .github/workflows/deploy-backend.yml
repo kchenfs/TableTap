@@ -6,7 +6,7 @@ name: Deploy TableTap-OrderProcessing Lambda
 on:
   push:
     branches:
-      - main
+      - feature/take-stripe-integration
 
 jobs:
   deploy:
