@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react'; // <-- ADD useEffect HERE
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import axios from 'axios';
 import Header from './components/Header';
@@ -47,6 +47,45 @@ function MenuApp() {
 
   const appMode = import.meta.env.VITE_APP_MODE || 'dine-in';
   const tableId = import.meta.env.VITE_TABLE_ID;
+
+  // =================================================================
+  // === START: ADD THIS useEffect HOOK FOR THE LEX CHATBOT      ===
+  // =================================================================
+  useEffect(() => {
+    // Check if the loader script from index.html has loaded
+    if (window.ChatBotUiLoader) {
+      // Config for the loader
+      const loaderOptions = {
+        iframeSrcPath: 'https://take-out.momotarosushi.ca/chatbot-assets/chatbot.html#/?lexWebUiEmbed=true'
+      };
+      
+      const iframeLoader = new window.ChatBotUiLoader.IframeLoader(loaderOptions);
+
+      // Config for the chatbot itself
+      const chatbotUiConfig = {
+        cognito: {
+          poolId: import.meta.env.VITE_COGNITO_POOL_ID 
+        },
+        lex: {
+          v2BotId: import.meta.env.VITE_LEX_BOT_ID,
+          v2BotAliasId: import.meta.env.VITE_LEX_BOT_ALIAS_ID,
+          v2BotLocaleId: import.meta.env.VITE_LEX_BOT_LOCALE_ID
+        },
+        ui: {
+          parentOrigin: window.location.origin
+        }
+      };
+      
+      // Load the chatbot
+      iframeLoader.load(chatbotUiConfig)
+        .then(() => console.log('Chatbot loaded!'))
+        .catch((error) => console.error('Chatbot failed to load:', error));
+    }
+  }, []); // The empty array [] ensures this runs only once when the app starts
+  // =================================================================
+  // === END: ADD THIS useEffect HOOK FOR THE LEX CHATBOT        ===
+  // =================================================================
+
 
   const menuCategories = useMemo(() => organizeMenuByCategory(MenuItems), [MenuItems]);
   const total = useMemo(() => {

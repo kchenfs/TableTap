@@ -6,16 +6,22 @@ import { APIMenuItem } from './types'; // Assuming your types file is here
 
 // This is the corrected data fetching function
 const fetchMenu = async (): Promise<APIMenuItem[]> => {
-  const response = await fetch('https://097zxtivqd.execute-api.ca-central-1.amazonaws.com/PROD/getMenuItem');
+  // === THIS IS THE MODIFIED PART ===
+  const apiUrl = import.meta.env.VITE_API_GATEWAY_URL;
+
+  // Best practice: Add a check to ensure the variable is loaded.
+  if (!apiUrl) {
+    throw new Error('VITE_API_GATEWAY_URL is not defined. Please check your .env file.');
+  }
+
+  const response = await fetch(apiUrl);
+  // ===============================
+
   if (!response.ok) {
     throw new Error('Network response was not ok');
   }
 
-  // The API is returning a direct JSON array. 
-  // response.json() will parse it correctly.
   const data = await response.json();
-
-  // Return the parsed data, or an empty array if it's null.
   return data || [];
 };
 

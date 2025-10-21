@@ -4,6 +4,10 @@ x-common-build-args: &common-build-args
   VITE_API_KEY: ${VITE_API_KEY}
   VITE_TABLE_TAP_URL: ${VITE_TABLE_TAP_URL}
   VITE_API_GATEWAY_URL: ${VITE_API_GATEWAY_URL}
+  VITE_COGNITO_POOL_ID: ${VITE_COGNITO_POOL_ID}
+  VITE_LEX_BOT_ID: ${VITE_LEX_BOT_ID}
+  VITE_LEX_BOT_ALIAS_ID: ${VITE_LEX_BOT_ALIAS_ID}
+  VITE_LEX_BOT_LOCALE_ID: ${VITE_LEX_BOT_LOCALE_ID}
 
 services:
   # Table instances for Dine-in
@@ -172,6 +176,8 @@ services:
       - ./nginx-load-balancer.conf:/etc/nginx/nginx.conf:ro
       - ./certbot/conf:/etc/letsencrypt
       - ./certbot/www:/var/www/certbot
+      - ./chatbot-assets:/usr/share/nginx/html/chatbot-assets:ro
+
     restart: unless-stopped
     networks:
       - restaurant-network
