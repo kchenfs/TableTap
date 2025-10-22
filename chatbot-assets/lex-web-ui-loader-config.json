@@ -1,10 +1,10 @@
 {
   "cognito": {
-    "poolId": "YOUR_COGNITO_POOL_ID"
+    "poolId": "ca-central-1:ed7a2f13-8e6f-45b7-99e8-1fb658f2f207"
   },
   "lex": {
-    "v2BotId": "YOUR_BOT_ID",
-    "v2BotAliasId": "YOUR_BOT_ALIAS_ID",
+    "v2BotId": "S832QRVZP3",
+    "v2BotAliasId": "TSTALIASID",
     "v2BotLocaleId": "en_US"
   },
   "ui": {
@@ -13,3 +13,5 @@
     "toolbarLogo": ""
   }
 }
+
+
