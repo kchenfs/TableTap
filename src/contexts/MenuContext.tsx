@@ -7,11 +7,11 @@ import { APIMenuItem } from './types'; // Assuming your types file is here
 // This is the corrected data fetching function
 const fetchMenu = async (): Promise<APIMenuItem[]> => {
   // === THIS IS THE MODIFIED PART ===
-  const apiUrl = import.meta.env.VITE_API_GATEWAY_URL;
+  const apiUrl = import.meta.env.VITE_API_URL_MENU;
 
   // Best practice: Add a check to ensure the variable is loaded.
   if (!apiUrl) {
-    throw new Error('VITE_API_GATEWAY_URL is not defined. Please check your .env file.');
+    throw new Error('VITE_API_URL_MENU is not defined. Please check your .env file.');
   }
 
   const response = await fetch(apiUrl);

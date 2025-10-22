@@ -54,6 +54,7 @@ export default function CheckoutForm({ cart, total, orderNote }: CheckoutFormPro
   const createPaymentIntent = async (customerDetails?: { email?: string, phone?: string }) => {
     try {
       const paymentApiUrl = import.meta.env.VITE_API_GATEWAY_URL;
+      
       const orderId = nanoid(5).toUpperCase();
 
       const res = await fetch(paymentApiUrl, {
