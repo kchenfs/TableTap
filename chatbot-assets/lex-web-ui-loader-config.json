@@ -1,5 +1,6 @@
 {
-  "cognito": {
+    "iframeSrcPath": "/chatbot-assets/chatbot.html#/?lexWebUiEmbed=true",
+    "cognito": {
     "poolId": "ca-central-1:ed7a2f13-8e6f-45b7-99e8-1fb658f2f207"
   },
   "lex": {

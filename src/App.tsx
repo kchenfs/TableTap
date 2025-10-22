@@ -52,27 +52,10 @@ function MenuApp() {
   useEffect(() => {
     const initChatbot = () => {
       if (window.ChatBotUiLoader) {
-        const loaderOptions = {
-          iframeSrcPath: '/chatbot-assets/chatbot.html#/?lexWebUiEmbed=true'
-        };
+        const iframeLoader = new window.ChatBotUiLoader.IframeLoader({});
         
-        const iframeLoader = new window.ChatBotUiLoader.IframeLoader(loaderOptions);
-
-        const chatbotUiConfig = {
-          cognito: {
-            poolId: import.meta.env.VITE_COGNITO_POOL_ID 
-          },
-          lex: {
-            v2BotId: import.meta.env.VITE_LEX_BOT_ID,
-            v2BotAliasId: import.meta.env.VITE_LEX_BOT_ALIAS_ID,
-            v2BotLocaleId: import.meta.env.VITE_LEX_BOT_LOCALE_ID
-          },
-          ui: {
-            parentOrigin: window.location.origin
-          }
-        };
-        
-        iframeLoader.load(chatbotUiConfig)
+        // Load using the config file
+        iframeLoader.load()
           .then(() => console.log('Chatbot loaded!'))
           .catch((error) => console.error('Chatbot failed to load:', error));
       } else {
