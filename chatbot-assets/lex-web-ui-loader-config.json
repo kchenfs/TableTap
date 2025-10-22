@@ -1,0 +1,15 @@
+{
+  "cognito": {
+    "poolId": "YOUR_COGNITO_POOL_ID"
+  },
+  "lex": {
+    "v2BotId": "YOUR_BOT_ID",
+    "v2BotAliasId": "YOUR_BOT_ALIAS_ID",
+    "v2BotLocaleId": "en_US"
+  },
+  "ui": {
+    "parentOrigin": "",
+    "toolbarTitle": "Chat Assistant",
+    "toolbarLogo": ""
+  }
+}
