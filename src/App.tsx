@@ -20,6 +20,12 @@ import { Elements } from '@stripe/react-stripe-js';
 import CheckoutForm from './components/CheckoutForm';
 import Completion from './components/Completion';
 
+declare global {
+  interface Window {
+    ChatBotUiLoader: any;
+  }
+}
+
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
@@ -52,10 +58,42 @@ function MenuApp() {
   useEffect(() => {
     const initChatbot = () => {
       if (window.ChatBotUiLoader) {
-        const iframeLoader = new window.ChatBotUiLoader.IframeLoader({});
+        const currentOrigin = window.location.origin;
         
-        // Load using the config file
-        iframeLoader.load()
+        // Configure the loader to NOT load from a file,
+        // as we will provide the config object directly to the .load() method.
+        const loaderOptions = {
+          shouldLoadConfigFromJsonFile: false, // <-- Set this to false
+          baseUrl: '/'
+        };
+        
+        const iframeLoader = new window.ChatBotUiLoader.IframeLoader(loaderOptions);
+
+        const cognitoPoolId = import.meta.env.VITE_COGNITO_POOL_ID;
+        const awsRegion = 'ca-central-1'; // <-- Hardcoded region
+
+        // Override with current origin for cross-origin support
+        const chatbotUiConfig = {
+          region: awsRegion, // <-- Set the region here
+          cognito: {
+            poolId: cognitoPoolId 
+          },
+          lex: {
+            v2BotId: import.meta.env.VITE_LEX_BOT_ID,
+            v2BotAliasId: import.meta.env.VITE_LEX_BOT_ALIAS_ID,
+            v2BotLocaleId: import.meta.env.VITE_LEX_BOT_LOCALE_ID
+          },
+          ui: {
+            parentOrigin: currentOrigin,
+            toolbarTitle: 'Chat Assistant'
+          },
+          iframe: {
+            iframeOrigin: currentOrigin,
+            iframeSrcPath: '/chatbot-assets/chatbot.html#/?lexWebUiEmbed=true', // <-- Path moved here
+          }
+        };
+        
+        iframeLoader.load(chatbotUiConfig)
           .then(() => console.log('Chatbot loaded!'))
           .catch((error) => console.error('Chatbot failed to load:', error));
       } else {
@@ -328,3 +366,4 @@ function App() {
 }
 
 export default App;
+
