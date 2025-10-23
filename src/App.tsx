@@ -63,20 +63,21 @@ function MenuApp() {
         // Configure the loader to NOT load from a file,
         // as we will provide the config object directly to the .load() method.
         const loaderOptions = {
-          shouldLoadConfigFromJsonFile: false, // <-- Set this to false
+          shouldLoadConfigFromJsonFile: false,
           baseUrl: '/'
         };
         
         const iframeLoader = new window.ChatBotUiLoader.IframeLoader(loaderOptions);
 
         const cognitoPoolId = import.meta.env.VITE_COGNITO_POOL_ID;
-        const awsRegion = 'ca-central-1'; // <-- Hardcoded region
+        const awsRegion = 'ca-central-1'; // Hardcoded region
 
         // Override with current origin for cross-origin support
         const chatbotUiConfig = {
-          region: awsRegion, // <-- Set the region here
+          region: awsRegion, // <-- Set region at top level (for Lex)
           cognito: {
-            poolId: cognitoPoolId 
+            poolId: cognitoPoolId,
+            region: awsRegion // <-- ALSO set region here (for Cognito)
           },
           lex: {
             v2BotId: import.meta.env.VITE_LEX_BOT_ID,
@@ -85,11 +86,11 @@ function MenuApp() {
           },
           ui: {
             parentOrigin: currentOrigin,
-            toolbarTitle: 'Chat Assistant'
+            toolbarTitle: 'Chat Assistant' // This title will now be used
           },
           iframe: {
             iframeOrigin: currentOrigin,
-            iframeSrcPath: '/chatbot-assets/chatbot.html#/?lexWebUiEmbed=true', // <-- Path moved here
+            iframeSrcPath: '/chatbot-assets/chatbot.html#/?lexWebUiEmbed=true',
           }
         };
         
@@ -228,7 +229,7 @@ function MenuApp() {
     theme: 'night',
     variables: {
       colorPrimary: '#0ea5e9',
-      colorBackground: '#1e293b',
+      colorBackground: '#1e2b3b',
       colorText: '#f8fafc',
       colorDanger: '#ef4444',
       fontFamily: 'Inter, sans-serif',
@@ -366,4 +367,3 @@ function App() {
 }
 
 export default App;
-
