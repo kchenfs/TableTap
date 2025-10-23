@@ -49,7 +49,7 @@ jobs:
           file: ./Dockerfile
           push: true
           # Tag the image with its service name, e.g., username/TableAi:table-1
-          tags: ${{ secrets.DOCKERHUB_USERNAME }}/TableAi:${{ matrix.service.name }}
+          tags: ${{ secrets.DOCKERHUB_USERNAME }}/tableai:${{ matrix.service.name }}
           build-args: |
             VITE_APP_MODE=${{ matrix.service.mode }}
             VITE_TABLE_ID=${{ matrix.service.name }}
