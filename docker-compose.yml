@@ -1,167 +1,96 @@
-# Extension fields for reusable configuration
-x-common-build-args: &common-build-args
-  VITE_API_URL_MENU: ${VITE_API_URL_MENU}
-  VITE_API_KEY: ${VITE_API_KEY}
-  VITE_TABLE_TAP_URL: ${VITE_TABLE_TAP_URL}
-  VITE_API_GATEWAY_URL: ${VITE_API_GATEWAY_URL}
-  VITE_COGNITO_POOL_ID: ${VITE_COGNITO_POOL_ID}
-  VITE_LEX_BOT_ID: ${VITE_LEX_BOT_ID}
-  VITE_LEX_BOT_ALIAS_ID: ${VITE_LEX_BOT_ALIAS_ID}
-  VITE_LEX_BOT_LOCALE_ID: ${VITE_LEX_BOT_LOCALE_ID}
-
 services:
   # Table instances for Dine-in
   table-1:
-    build:
-      context: .
-      dockerfile: Dockerfile
-      args:
-        <<: *common-build-args
-        VITE_APP_MODE: dine-in
-        VITE_TABLE_ID: table-1
+    image: kencfs/tableai:table-1
+    pull_policy: always
     expose:
       - "80"
     networks:
       - restaurant-network
   
   table-2:
-    build:
-      context: .
-      dockerfile: Dockerfile
-      args:
-        <<: *common-build-args
-        VITE_APP_MODE: dine-in
-        VITE_TABLE_ID: table-2
+    image: kencfs/tableai:table-2
+    pull_policy: always
     expose:
       - "80"
     networks:
       - restaurant-network
   
   table-3:
-    build:
-      context: .
-      dockerfile: Dockerfile
-      args:
-        <<: *common-build-args
-        VITE_APP_MODE: dine-in
-        VITE_TABLE_ID: table-3
+    image: kencfs/tableai:table-3
+    pull_policy: always
     expose:
       - "80"
     networks:
       - restaurant-network
 
   table-4:
-    build:
-      context: .
-      dockerfile: Dockerfile
-      args:
-        <<: *common-build-args
-        VITE_APP_MODE: dine-in
-        VITE_TABLE_ID: table-4
+    image: kencfs/tableai:table-4
+    pull_policy: always
     expose:
       - "80"
     networks:
       - restaurant-network
 
   table-5:
-    build:
-      context: .
-      dockerfile: Dockerfile
-      args:
-        <<: *common-build-args
-        VITE_APP_MODE: dine-in
-        VITE_TABLE_ID: table-5
+    image: kencfs/tableai:table-5
+    pull_policy: always
     expose:
       - "80"
     networks:
       - restaurant-network
 
   table-6:
-    build:
-      context: .
-      dockerfile: Dockerfile
-      args:
-        <<: *common-build-args
-        VITE_APP_MODE: dine-in
-        VITE_TABLE_ID: table-6
+    image: kencfs/tableai:table-6
+    pull_policy: always
     expose:
       - "80"
     networks:
       - restaurant-network
 
   table-7:
-    build:
-      context: .
-      dockerfile: Dockerfile
-      args:
-        <<: *common-build-args
-        VITE_APP_MODE: dine-in
-        VITE_TABLE_ID: table-7
+    image: kencfs/tableai:table-7
+    pull_policy: always
     expose:
       - "80"
     networks:
       - restaurant-network
 
   table-8:
-    build:
-      context: .
-      dockerfile: Dockerfile
-      args:
-        <<: *common-build-args
-        VITE_APP_MODE: dine-in
-        VITE_TABLE_ID: table-8
+    image: kencfs/tableai:table-8
+    pull_policy: always
     expose:
       - "80"
     networks:
       - restaurant-network
 
   table-9:
-    build:
-      context: .
-      dockerfile: Dockerfile
-      args:
-        <<: *common-build-args
-        VITE_APP_MODE: dine-in
-        VITE_TABLE_ID: table-9
+    image: kencfs/tableai:table-9
+    pull_policy: always
     expose:
       - "80"
     networks:
       - restaurant-network
 
   table-10:
-    build:
-      context: .
-      dockerfile: Dockerfile
-      args:
-        <<: *common-build-args
-        VITE_APP_MODE: dine-in
-        VITE_TABLE_ID: table-10
+    image: kencfs/tableai:table-10
+    pull_policy: always
     expose:
       - "80"
     networks:
       - restaurant-network
 
   table-11:
-    build:
-      context: .
-      dockerfile: Dockerfile
-      args:
-        <<: *common-build-args
-        VITE_APP_MODE: dine-in
-        VITE_TABLE_ID: table-11
+    image: kencfs/tableai:table-11
+    pull_policy: always
     expose:
       - "80"
     networks:
       - restaurant-network
 
   takeout:
-    build:
-      context: .
-      dockerfile: Dockerfile
-      args:
-        <<: *common-build-args
-        VITE_APP_MODE: takeout
-        VITE_TABLE_ID: takeout
+    image: kencfs/tableai:takeout
+    pull_policy: always
     expose:
       - "80"
     networks:
@@ -177,7 +106,6 @@ services:
       - ./certbot/conf:/etc/letsencrypt
       - ./certbot/www:/var/www/certbot
       - ./chatbot-assets:/usr/share/nginx/html/chatbot-assets:ro
-
     restart: unless-stopped
     networks:
       - restaurant-network
