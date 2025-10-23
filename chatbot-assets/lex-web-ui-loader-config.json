@@ -1,6 +1,6 @@
 {
-    "iframeSrcPath": "/chatbot-assets/chatbot.html#/?lexWebUiEmbed=true",
-    "cognito": {
+  "iframeSrcPath": "/chatbot-assets/chatbot.html#/?lexWebUiEmbed=true",
+  "cognito": {
     "poolId": "ca-central-1:ed7a2f13-8e6f-45b7-99e8-1fb658f2f207"
   },
   "lex": {
@@ -9,10 +9,11 @@
     "v2BotLocaleId": "en_US"
   },
   "ui": {
-    "parentOrigin": "",
+    "parentOrigin": "https://take-out.momotarosushi.ca",
     "toolbarTitle": "Chat Assistant",
     "toolbarLogo": ""
+  },
+  "iframe": {
+    "iframeOrigin": "https://take-out.momotarosushi.ca"
   }
 }
-
-

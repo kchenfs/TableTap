@@ -52,10 +52,37 @@ function MenuApp() {
   useEffect(() => {
     const initChatbot = () => {
       if (window.ChatBotUiLoader) {
-        const iframeLoader = new window.ChatBotUiLoader.IframeLoader({});
+        const currentOrigin = window.location.origin;
         
-        // Load using the config file
-        iframeLoader.load()
+        // Explicitly set the config URL
+        const loaderOptions = {
+          configUrl: '/chatbot-assets/lex-web-ui-loader-config.json',
+          shouldLoadConfigFromJsonFile: true
+        };
+        
+        const iframeLoader = new window.ChatBotUiLoader.IframeLoader(loaderOptions);
+
+        // Override with current origin for cross-origin support
+        const chatbotUiConfig = {
+          iframeSrcPath: '/chatbot-assets/chatbot.html#/?lexWebUiEmbed=true',
+          cognito: {
+            poolId: import.meta.env.VITE_COGNITO_POOL_ID 
+          },
+          lex: {
+            v2BotId: import.meta.env.VITE_LEX_BOT_ID,
+            v2BotAliasId: import.meta.env.VITE_LEX_BOT_ALIAS_ID,
+            v2BotLocaleId: import.meta.env.VITE_LEX_BOT_LOCALE_ID
+          },
+          ui: {
+            parentOrigin: currentOrigin,
+            toolbarTitle: 'Chat Assistant'
+          },
+          iframe: {
+            iframeOrigin: currentOrigin
+          }
+        };
+        
+        iframeLoader.load(chatbotUiConfig)
           .then(() => console.log('Chatbot loaded!'))
           .catch((error) => console.error('Chatbot failed to load:', error));
       } else {
