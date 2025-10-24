@@ -1,12 +1,15 @@
 {
   "iframeSrcPath": "/chatbot-assets/chatbot.html#/?lexWebUiEmbed=true",
+  "region": "ca-central-1",
   "cognito": {
-    "poolId": "ca-central-1:ed7a2f13-8e6f-45b7-99e8-1fb658f2f207"
+    "poolId": "ca-central-1:ed7a2f13-8e6f-45b7-99e8-1fb658f2f207",
+    "region": "ca-central-1"
   },
   "lex": {
     "v2BotId": "S832QRVZP3",
     "v2BotAliasId": "TSTALIASID",
-    "v2BotLocaleId": "en_US"
+    "v2BotLocaleId": "en_US",
+    "region": "ca-central-1"
   },
   "ui": {
     "parentOrigin": "https://take-out.momotarosushi.ca",

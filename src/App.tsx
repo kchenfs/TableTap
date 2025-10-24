@@ -55,38 +55,41 @@ function MenuApp() {
   const tableId = import.meta.env.VITE_TABLE_ID;
 
   // Chatbot loader effect
+  // Replace the chatbot loader effect in App.tsx with this:
+
   useEffect(() => {
     const initChatbot = () => {
       if (window.ChatBotUiLoader) {
         const currentOrigin = window.location.origin;
         
-        // Configure the loader to NOT load from a file,
-        // as we will provide the config object directly to the .load() method.
+        // Configure the loader to load from the config file we control
         const loaderOptions = {
-          shouldLoadConfigFromJsonFile: false,
+          shouldLoadConfigFromJsonFile: true,
+          configUrl: '/chatbot-assets/lex-web-ui-loader-config.json',
           baseUrl: '/'
         };
         
         const iframeLoader = new window.ChatBotUiLoader.IframeLoader(loaderOptions);
 
         const cognitoPoolId = import.meta.env.VITE_COGNITO_POOL_ID;
-        const awsRegion = 'ca-central-1'; // Hardcoded region
+        const awsRegion = 'ca-central-1';
 
-        // Override with current origin for cross-origin support
+        // Override config with environment variables
         const chatbotUiConfig = {
-          region: awsRegion, // <-- Set region at top level (for Lex)
+          region: awsRegion,
           cognito: {
             poolId: cognitoPoolId,
-            region: awsRegion // <-- ALSO set region here (for Cognito)
+            region: awsRegion
           },
           lex: {
             v2BotId: import.meta.env.VITE_LEX_BOT_ID,
             v2BotAliasId: import.meta.env.VITE_LEX_BOT_ALIAS_ID,
-            v2BotLocaleId: import.meta.env.VITE_LEX_BOT_LOCALE_ID
+            v2BotLocaleId: import.meta.env.VITE_LEX_BOT_LOCALE_ID,
+            region: awsRegion
           },
           ui: {
             parentOrigin: currentOrigin,
-            toolbarTitle: 'Chat Assistant' // This title will now be used
+            toolbarTitle: 'Chat Assistant'
           },
           iframe: {
             iframeOrigin: currentOrigin,
@@ -95,7 +98,7 @@ function MenuApp() {
         };
         
         iframeLoader.load(chatbotUiConfig)
-          .then(() => console.log('Chatbot loaded!'))
+          .then(() => console.log('Chatbot loaded successfully!'))
           .catch((error) => console.error('Chatbot failed to load:', error));
       } else {
         console.warn('ChatBotUiLoader not available yet, retrying...');
