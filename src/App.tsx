@@ -64,7 +64,7 @@ function MenuApp() {
         
         // Simplified loader options - let it use defaults mostly
         const loaderOptions = {
-          shouldLoadConfigFromJsonFile: false, // Don't load from file, use inline config
+          shouldLoadConfigFromJsonFile: true, // Don't load from file, use inline config
           baseUrl: currentOrigin
         };
         
