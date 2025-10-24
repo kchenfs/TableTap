@@ -65,8 +65,8 @@ function MenuApp() {
         // Configure the loader to load from the config file we control
         const loaderOptions = {
           shouldLoadConfigFromJsonFile: true,
-          configUrl: '/chatbot-assets/lex-web-ui-loader-config.json',
-          baseUrl: '/'
+          configUrl: `${currentOrigin}/chatbot-assets/lex-web-ui-loader-config.json`,
+          baseUrl: currentOrigin
         };
         
         const iframeLoader = new window.ChatBotUiLoader.IframeLoader(loaderOptions);
@@ -89,7 +89,7 @@ function MenuApp() {
           },
           ui: {
             parentOrigin: currentOrigin,
-            toolbarTitle: 'Chat Assistant'
+            toolbarTitle: 'Momotaro Assistant'
           },
           iframe: {
             iframeOrigin: currentOrigin,
