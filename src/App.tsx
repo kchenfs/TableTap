@@ -57,24 +57,32 @@ function MenuApp() {
   // Chatbot loader effect
   // Replace the chatbot loader effect in App.tsx with this:
 
+ Replace the chatbot loader effect in App.tsx with this:
+
   useEffect(() => {
     const initChatbot = () => {
       if (window.ChatBotUiLoader) {
         const currentOrigin = window.location.origin;
         
-        // Configure the loader to load from the config file we control
+        console.log('Initializing chatbot with origin:', currentOrigin);
+        
+        // Simplified loader options - let it use defaults mostly
         const loaderOptions = {
-          shouldLoadConfigFromJsonFile: true,
-          configUrl: `${currentOrigin}/chatbot-assets/lex-web-ui-loader-config.json`,
+          shouldLoadConfigFromJsonFile: false, // Don't load from file, use inline config
           baseUrl: currentOrigin
         };
         
         const iframeLoader = new window.ChatBotUiLoader.IframeLoader(loaderOptions);
 
         const cognitoPoolId = import.meta.env.VITE_COGNITO_POOL_ID;
+        const botId = import.meta.env.VITE_LEX_BOT_ID;
+        const botAliasId = import.meta.env.VITE_LEX_BOT_ALIAS_ID;
+        const botLocaleId = import.meta.env.VITE_LEX_BOT_LOCALE_ID;
         const awsRegion = 'ca-central-1';
 
-        // Override config with environment variables
+        console.log('Bot Config:', { botId, botAliasId, botLocaleId, cognitoPoolId, awsRegion });
+
+        // Complete config object
         const chatbotUiConfig = {
           region: awsRegion,
           cognito: {
@@ -82,31 +90,45 @@ function MenuApp() {
             region: awsRegion
           },
           lex: {
-            v2BotId: import.meta.env.VITE_LEX_BOT_ID,
-            v2BotAliasId: import.meta.env.VITE_LEX_BOT_ALIAS_ID,
-            v2BotLocaleId: import.meta.env.VITE_LEX_BOT_LOCALE_ID,
+            v2BotId: botId,
+            v2BotAliasId: botAliasId,
+            v2BotLocaleId: botLocaleId,
             region: awsRegion
           },
           ui: {
             parentOrigin: currentOrigin,
-            toolbarTitle: 'Momotaro Assistant'
+            toolbarTitle: 'Chat Assistant',
+            toolbarLogo: ''
           },
           iframe: {
             iframeOrigin: currentOrigin,
             iframeSrcPath: '/chatbot-assets/chatbot.html#/?lexWebUiEmbed=true',
+            shouldLoadIframeMinimized: true
           }
         };
         
+        console.log('Loading chatbot with config:', chatbotUiConfig);
+        
         iframeLoader.load(chatbotUiConfig)
-          .then(() => console.log('Chatbot loaded successfully!'))
-          .catch((error) => console.error('Chatbot failed to load:', error));
+          .then(() => {
+            console.log('✅ Chatbot loaded successfully!');
+          })
+          .catch((error) => {
+            console.error('❌ Chatbot failed to load:', error);
+            console.error('Error details:', {
+              message: error.message,
+              stack: error.stack,
+              config: chatbotUiConfig
+            });
+          });
       } else {
         console.warn('ChatBotUiLoader not available yet, retrying...');
         setTimeout(initChatbot, 100);
       }
     };
 
-    const timeoutId = setTimeout(initChatbot, 500);
+    // Give the page a bit more time to load all assets
+    const timeoutId = setTimeout(initChatbot, 1000);
     return () => clearTimeout(timeoutId);
   }, []);
 

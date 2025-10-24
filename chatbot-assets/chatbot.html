@@ -9,9 +9,8 @@
         frame-src *;
         script-src 'self' 'unsafe-eval';
         style-src 'self' 'unsafe-inline' fonts.googleapis.com;
-        connect-src 'self' wss://*.amazonaws.com *.amazonaws.com *.amazoncognito.com;
-        font-src 'self' fonts.gstatic.com; 
-        upgrade-insecure-requests;">
+        connect-src 'self' wss://*.amazonaws.com https://*.amazonaws.com https://*.amazoncognito.com;
+        font-src 'self' fonts.gstatic.com;">
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, minimal-ui">
     <title>LexWebUi</title>
     <link href="data:image/x-icon;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQEAYAAABPYyMiAAAABmJLR0T///////8JWPfcAAAACXBIWXMAAABIAAAASABGyWs+AAAAF0lEQVRIx2NgGAWjYBSMglEwCkbBSAcACBAAAeaR9cIAAAAASUVORK5CYII=" rel="icon" type="image/x-icon" />
