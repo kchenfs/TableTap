@@ -75,7 +75,7 @@ function MenuApp() {
         // Call load() with NO arguments to load from the JSON file
         iframeLoader.load()
           .then(() => {
-            console.log('✅ Chatbot loaded successfully from file!');
+            console.log('✅ Chatbot loaded successfully from file!!');
           })
           .catch((error) => {
             console.error('❌ Chatbot failed to load:', error);
