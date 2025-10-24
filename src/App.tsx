@@ -57,7 +57,6 @@ function MenuApp() {
   // Chatbot loader effect
   // Replace the chatbot loader effect in App.tsx with this:
 
- Replace the chatbot loader effect in App.tsx with this:
 
   useEffect(() => {
     const initChatbot = () => {
