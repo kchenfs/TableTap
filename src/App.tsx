@@ -54,11 +54,6 @@ function MenuApp() {
   const appMode = import.meta.env.VITE_APP_MODE || 'dine-in';
   const tableId = import.meta.env.VITE_TABLE_ID;
 
-  // Chatbot loader effect
-  // Replace the chatbot loader effect in App.tsx with this:
-
-
- // Replace the chatbot loader effect in App.tsx with this:
 
   useEffect(() => {
     const initChatbot = () => {
@@ -88,10 +83,8 @@ function MenuApp() {
           region: awsRegion,
           cognito: {
             poolId: cognitoPoolId,
-            region: awsRegion,
+            region: awsRegion
             // Add dummy User Pool config to prevent authentication attempts
-            appUserPoolClientId: 'dummy',
-            appUserPoolName: 'dummy'
           },
           lex: {
             v2BotId: botId,
