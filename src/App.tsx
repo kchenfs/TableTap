@@ -100,7 +100,7 @@ function MenuApp() {
           },
           iframe: {
             iframeOrigin: currentOrigin,
-            iframeSrcPath: '/chatbot-assets/chatbot.html#/?lexWebUiEmbed=true',
+            iframeSrcPath: '/dist/index.html#/?lexWebUiEmbed=true',
             shouldLoadIframeMinimized: true
           }
         };
