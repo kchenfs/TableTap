@@ -62,61 +62,26 @@ function MenuApp() {
         
         console.log('Initializing chatbot with origin:', currentOrigin);
         
-        // Simplified loader options - let it use defaults mostly
+        // Loader options: Use the JSON file
         const loaderOptions = {
-          shouldLoadConfigFromJsonFile: true, // Don't load from file, use inline config
+          shouldLoadConfigFromJsonFile: true, 
           baseUrl: currentOrigin
         };
         
         const iframeLoader = new window.ChatBotUiLoader.IframeLoader(loaderOptions);
 
-        const cognitoPoolId = import.meta.env.VITE_COGNITO_POOL_ID;
-        const botId = import.meta.env.VITE_LEX_BOT_ID;
-        const botAliasId = import.meta.env.VITE_LEX_BOT_ALIAS_ID;
-        const botLocaleId = import.meta.env.VITE_LEX_BOT_LOCALE_ID;
-        const awsRegion = 'ca-central-1';
-
-        console.log('Bot Config:', { botId, botAliasId, botLocaleId, cognitoPoolId, awsRegion });
-
-        // Complete config object
-        const chatbotUiConfig = {
-          region: awsRegion,
-          cognito: {
-            poolId: cognitoPoolId,
-            region: awsRegion
-            // Add dummy User Pool config to prevent authentication attempts
-          },
-          lex: {
-            v2BotId: botId,
-            v2BotAliasId: botAliasId,
-            v2BotLocaleId: botLocaleId,
-            region: awsRegion
-          },
-          ui: {
-            parentOrigin: currentOrigin,
-            toolbarTitle: 'Chat Assistant',
-            toolbarLogo: '',
-            enableLogin: false // Explicitly disable login
-          },
-          iframe: {
-            iframeOrigin: currentOrigin,
-            iframeSrcPath: '/dist/index.html#/?lexWebUiEmbed=true',
-            shouldLoadIframeMinimized: true
-          }
-        };
+        console.log('Loading chatbot from config file...');
         
-        console.log('Loading chatbot with config:', chatbotUiConfig);
-        
-        iframeLoader.load(chatbotUiConfig)
+        // Call load() with NO arguments to load from the JSON file
+        iframeLoader.load()
           .then(() => {
-            console.log('✅ Chatbot loaded successfully!');
+            console.log('✅ Chatbot loaded successfully from file!');
           })
           .catch((error) => {
             console.error('❌ Chatbot failed to load:', error);
             console.error('Error details:', {
               message: error.message,
-              stack: error.stack,
-              config: chatbotUiConfig
+              stack: error.stack
             });
           });
       } else {
