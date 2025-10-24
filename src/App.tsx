@@ -58,6 +58,8 @@ function MenuApp() {
   // Replace the chatbot loader effect in App.tsx with this:
 
 
+ // Replace the chatbot loader effect in App.tsx with this:
+
   useEffect(() => {
     const initChatbot = () => {
       if (window.ChatBotUiLoader) {
@@ -86,7 +88,10 @@ function MenuApp() {
           region: awsRegion,
           cognito: {
             poolId: cognitoPoolId,
-            region: awsRegion
+            region: awsRegion,
+            // Add dummy User Pool config to prevent authentication attempts
+            appUserPoolClientId: 'dummy',
+            appUserPoolName: 'dummy'
           },
           lex: {
             v2BotId: botId,
@@ -97,7 +102,8 @@ function MenuApp() {
           ui: {
             parentOrigin: currentOrigin,
             toolbarTitle: 'Chat Assistant',
-            toolbarLogo: ''
+            toolbarLogo: '',
+            enableLogin: false // Explicitly disable login
           },
           iframe: {
             iframeOrigin: currentOrigin,
