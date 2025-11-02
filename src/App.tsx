@@ -56,45 +56,70 @@ function MenuApp() {
 
 
   useEffect(() => {
-    const initChatbot = () => {
-      if (window.ChatBotUiLoader) {
-        const currentOrigin = window.location.origin;
-        
-        console.log('Initializing chatbot with origin:', currentOrigin);
-        
-        // Loader options: Use the JSON file
-        const loaderOptions = {
-          shouldLoadConfigFromJsonFile: true, 
-          baseUrl: currentOrigin
-        };
-        
-        const iframeLoader = new window.ChatBotUiLoader.IframeLoader(loaderOptions);
+  const initChatbot = () => {
+    if (window.ChatBotUiLoader) {
+      const currentOrigin = window.location.origin;
+      
+      console.log('Initializing chatbot with origin:', currentOrigin);
+      
+      // Don't load from JSON - pass config directly
+      const loaderOptions = {
+        shouldLoadConfigFromJsonFile: false,  // Changed to false
+        baseUrl: currentOrigin
+      };
+      
+      const iframeLoader = new window.ChatBotUiLoader.IframeLoader(loaderOptions);
 
-        console.log('Loading chatbot from config file...');
-        
-        // Call load() with NO arguments to load from the JSON file
-        iframeLoader.load()
-          .then(() => {
-            console.log('✅ Chatbot loaded successfully from file!!');
-          })
-          .catch((error) => {
-            console.error('❌ Chatbot failed to load:', error);
-            console.error('Error details:', {
-              message: error.message,
-              stack: error.stack
-            });
+      // Pass the config directly with dynamic origin
+      const chatbotConfig = {
+        region: "ca-central-1",
+        cognito: {
+          poolId: "ca-central-1:ed7a2f13-8e6f-45b7-99e8-1fb658f2f207",
+          region: "ca-central-1"
+        },
+        lex: {
+          v2BotId: "S832QRVZP3",
+          v2BotAliasId: "6JNOFO6XPY",
+          v2BotLocaleId: "en_US",
+          region: "ca-central-1",
+          initialText: "Welcome to Momotaro Sushi, what would you like to order?"
+        },
+        ui: {
+          parentOrigin: currentOrigin,  // Dynamic!
+          toolbarTitle: "Momotaro",
+          toolbarLogo: "",
+          enableLogin: false,
+          closeOnFulfillment: true
+        },
+        iframe: {
+          iframeOrigin: currentOrigin,  // Dynamic!
+          iframeSrcPath: "/dist/index.html#/?lexWebUiEmbed=true",
+          shouldLoadIframeMinimized: true
+        }
+      };
+      
+      console.log('Loading chatbot with config:', chatbotConfig);
+      
+      iframeLoader.load(chatbotConfig)
+        .then(() => {
+          console.log('✅ Chatbot loaded successfully!');
+        })
+        .catch((error) => {
+          console.error('❌ Chatbot failed to load:', error);
+          console.error('Error details:', {
+            message: error.message,
+            stack: error.stack
           });
-      } else {
-        console.warn('ChatBotUiLoader not available yet, retrying...');
-        setTimeout(initChatbot, 100);
-      }
-    };
+        });
+    } else {
+      console.warn('ChatBotUiLoader not available yet, retrying...');
+      setTimeout(initChatbot, 100);
+    }
+  };
 
-    // Give the page a bit more time to load all assets
-    const timeoutId = setTimeout(initChatbot, 1000);
-    return () => clearTimeout(timeoutId);
-  }, []);
-
+  const timeoutId = setTimeout(initChatbot, 1000);
+  return () => clearTimeout(timeoutId);
+}, []);
   const menuCategories = useMemo(() => organizeMenuByCategory(MenuItems), [MenuItems]);
   const total = useMemo(() => {
     const subtotal = cart.reduce((sum, item) => sum + (item.finalPrice * item.quantity), 0);

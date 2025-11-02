@@ -1,191 +1,171 @@
-/**
- * Custom Chatbot Styles for Lex Web UI
- * Based on the "Momotaro Sushi" website theme (Dark/Slate)
- *
- * Font Family: Inter
- * Colors:
- * - Background (slate-900): #0F172A
- * - UI Elements (slate-800): #1E293B
- * - UI Hover (slate-700):   #334155
- * - Bright Text (slate-50):  #F8FAFC
- * - Sub-heading (slate-200): #E2E8F0
- * - Body Text (slate-300):   #CBD5E1
- * - Muted Text (slate-400):  #94A3B8
- * - Borders (slate-800/ring): #1E293B or rgba(241, 245, 249, 0.1)
- * Radius: rounded-lg (8px)
- */
+/* ========================================
+   MODERN PROFESSIONAL THEME
+   Blend of dark elegance with blue accents
+   Optimized for readability and modern aesthetics
+   ======================================== */
 
-/* --- Import Google Font --- */
-@import url('https://rsms.me/inter/inter.css');
-
-/* --- Overall Font --- */
-.lex-web-ui, .v-application {
-  font-family: 'Inter', 'Inter var', sans-serif !important;
+/* Toolbar - Deep blue with subtle gradient */
+.bg-red {
+  background: linear-gradient(135deg, #1e3a8a 0%, #1e40af 100%) !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
 }
 
-/* --- Toolbar (Header) --- */
-/* Matches the site's sticky header */
-.toolbar.v-toolbar.bg-red,
-.toolbar.v-toolbar.bg-blue,
-.toolbar.v-toolbar.bg-green,
-.toolbar.v-toolbar.bg-grey,
-.toolbar.v-toolbar.bg-black {
-  background-color: #0F172A !important; /* bg-slate-900 */
-  border-bottom: 1px solid #1E293B !important; /* border-slate-800 */
-}
-
-/* Toolbar title - matching site title */
 .toolbar__title {
-  font-family: 'Inter', 'Inter var', sans-serif !important;
-  font-size: 18px !important;
-  color: #F8FAFC !important; /* text-slate-50 */
-  font-weight: 600 !important; /* font-semibold */
+  font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif !important;
+  font-size: 16px !important;
+  font-weight: 600 !important;
+  color: #ffffff !important;
+  letter-spacing: 0.3px;
 }
 
-/* --- Minimized Chat Button --- */
-/* Matches the site's "Cart" button */
+/* Minimized button */
 button.min-button {
-  background-color: #1E293B !important; /* bg-slate-800 */
-  border: 1px solid rgba(241, 245, 249, 0.1) !important; /* ring-slate-100/10 */
-  border-radius: 8px !important; /* rounded-lg */
+  background-color: #2563eb !important;
+  border-color: #2563eb !important;
+  transition: all 0.3s ease;
 }
 
 button.min-button:hover {
-  background-color: #334155 !important; /* hover:bg-slate-700 */
+  background-color: #1d4ed8 !important;
+  transform: scale(1.05);
 }
 
-/* --- Chat Window Background --- */
+/* Message container - Sophisticated dark background */
 .message-list-container {
-  background-color: #0F172A !important; /* bg-slate-900 */
+  background-color: #0f172a !important;
+  background-image: 
+    radial-gradient(at 0% 0%, rgba(30, 58, 138, 0.1) 0px, transparent 50%),
+    radial-gradient(at 100% 100%, rgba(37, 99, 235, 0.08) 0px, transparent 50%);
 }
 
-/* --- Message Bubbles --- */
-
-/* Bot message bubble */
-/* Matches UI elements like search bar and category links */
+/* Bot messages - Light with subtle blue tint */
 .message-bot .message-bubble {
-  background-color: #1E293B !important; /* bg-slate-800 */
+  background-color: #1e293b !important;
+  color: #e2e8f0 !important;
+  border-left: 3px solid #3b82f6;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
 }
 
-/* User message bubble */
-/* Uses a slightly lighter color for contrast, like a hover state */
+/* Human messages - Professional blue */
 .message-human .message-bubble {
-  background-color: #334155 !important; /* bg-slate-700 */
+  background: linear-gradient(135deg, #2563eb 0%, #1e40af 100%) !important;
+  color: #ffffff !important;
+  box-shadow: 0 2px 8px rgba(37, 99, 235, 0.3);
 }
 
-/* All message bubbles - matching rounded corners */
-.message-bubble {
-  border-radius: 8px !important; /* rounded-lg */
-  padding: 10px 16px !important;
-}
-
-/* --- Message Text --- */
-
-/* Text inside message bubbles */
-/* Matches site's item titles for clarity */
-.message-bubble .message-text {
-  font-family: 'Inter', 'Inter var', sans-serif !important;
-  line-height: 1.6;
-  font-size: 14px !important; /* text-sm */
-  color: #E2E8F0 !important; /* text-slate-200 */
-}
-
-/* General message text color override */
+/* Message text styling */
 .message-text {
-  color: #E2E8F0 !important; /* text-slate-200 */
+  color: #e2e8f0 !important;
+  font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif !important;
 }
 
-/* --- Response Cards --- */
-
-/* The card container itself */
-.v-card {
-  background-color: #1E293B !important; /* bg-slate-800 */
-  border-radius: 8px !important; /* rounded-lg */
-  border: 1px solid rgba(241, 245, 249, 0.1) !important;
+.message-human .message-text {
+  color: #ffffff !important;
 }
 
-/* Response Card Title */
-.headline {
-  font-family: 'Inter', 'Inter var', sans-serif !important;
-  font-size: 1rem !important; /* 16px, text-base */
-  font-weight: 500 !important; /* font-medium */
-  color: #E2E8F0 !important; /* text-slate-200 */
-  line-height: 1.4 !important;
-}
-
-.card__title {
-  padding: 12px 16px !important;
-}
-
-/* Response Card Body Text */
-/* Matches the site's item descriptions */
-.card__text {
-  font-family: 'Inter', 'Inter var', sans-serif !important;
-  font-size: 0.875rem !important; /* 14px, text-sm */
-  color: #94A3B8 !important; /* text-slate-400 */
-  padding: 8px 16px 16px !important;
-  line-height: 1.5;
-}
-
-/* Response Card Buttons */
-/* Matches the site's "Add" button */
+/* Response card buttons - Modern blue with hover effect */
 .v-card-actions .v-btn {
-  font-family: 'Inter', 'Inter var', sans-serif !important;
-  margin: 4px 4px !important;
-  font-size: 0.875rem !important; /* 14px, text-sm */
-  min-width: 44px !important;
-  background-color: #1E293B !important; /* bg-slate-800 */
-  color: #CBD5E1 !important; /* text-slate-300 */
-  border-radius: 8px !important; /* rounded-lg */
-  border: 1px solid rgba(241, 245, 249, 0.1) !important; /* ring-slate-100/10 */
-  text-transform: none !important; /* Site buttons are not uppercase */
+  background-color: #3b82f6 !important;
+  color: #ffffff !important;
+  transition: all 0.2s ease;
+  font-weight: 500 !important;
 }
 
-/* Matches the site's "Add" button hover */
 .v-card-actions .v-btn:hover {
-  background-color: #E2E8F0 !important; /* hover:bg-slate-200 */
-  color: #0F172A !important; /* hover:text-slate-900 */
+  background-color: #2563eb !important;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(37, 99, 235, 0.3);
 }
 
-
-/* --- Input Text Area --- */
-
-/* Container for the input bar */
-.input-group.input-group--text-field {
-  background-color: #0F172A !important; /* Match chat background */
-  padding: 10px 16px !important;
-  border-top: 1px solid #1E293B !important; /* border-slate-800 */
+/* Common styling - Enhanced readability */
+.message-bubble {
+  border-radius: 16px !important;
+  padding: 12px 18px !important;
+  margin: 8px 0 !important;
+  transition: all 0.2s ease;
 }
 
-/* The text input field itself */
-/* Matches the site's search bar */
+.message-bubble:hover {
+  transform: translateX(2px);
+}
+
+.message-bubble p {
+  margin-bottom: 8px;
+  line-height: 1.7;
+}
+
+.message-bubble p:last-child {
+  margin-bottom: 0px;
+}
+
+.message-bubble .message-text {
+  padding-left: 0;
+  padding-right: 0;
+  line-height: 1.7;
+  font-size: 15px;
+  font-weight: 400;
+}
+
+/* Input field styling - Better contrast */
 .input-group--text-field input,
 .input-group--text-field textarea {
-  font-family: 'Inter', 'Inter var', sans-serif !important;
   font-size: 14px !important;
-  color: #F8FAFC !important; /* text-slate-50 */
-  background-color: #1E293B !important; /* bg-slate-800 */
-  border-radius: 8px !important; /* rounded-lg */
-  border: 1px solid rgba(241, 245, 249, 0.1) !important; /* ring-slate-100/10 */
-  padding: 10px 16px !important;
+  color: #e2e8f0 !important;
+  background-color: #1e293b !important;
 }
 
-/* Chat input placeholder text */
 .input-group--text-field label {
-  font-family: 'Inter', 'Inter var', sans-serif !important;
   font-size: 14px !important;
-  color: #94A3B8 !important; /* placeholder:text-slate-400 */
+  color: #94a3b8 !important;
 }
 
-/* Style the Send button */
-.input-group .v-btn {
-  background-color: #1E293B !important; /* bg-slate-800 */
-  color: #CBD5E1 !important; /* text-slate-300 */
-  border-radius: 8px !important;
-  border: 1px solid rgba(241, 245, 249, 0.1) !important;
-  margin-left: 8px !important;
+/* Button styling */
+.v-card-actions .v-btn {
+  margin: 4px 4px !important;
+  font-size: 14px !important;
+  min-width: 44px !important;
+  border-radius: 10px !important;
+  text-transform: none !important;
+  font-weight: 500 !important;
 }
 
-.input-group .v-btn:hover {
-  background-color: #334155 !important; /* hover:bg-slate-700 */
+/* End chat button - Danger state */
+button.end-live-chat-button.btn {
+  color: white !important;
+  background-color: #dc2626 !important;
+  transition: all 0.2s ease;
+}
+
+button.end-live-chat-button.btn:hover {
+  background-color: #b91c1c !important;
+  box-shadow: 0 4px 8px rgba(220, 38, 38, 0.3);
+}
+
+/* iframe positioning */
+.lex-web-ui-iframe {
+  min-width: 25vw !important;
+  max-height: 315px !important;
+  margin-right: 10vw !important;
+  margin-bottom: 10px !important;
+  border-radius: 16px !important;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+}
+
+/* Scrollbar styling for webkit browsers */
+.message-list-container::-webkit-scrollbar {
+  width: 8px;
+}
+
+.message-list-container::-webkit-scrollbar-track {
+  background: #1e293b;
+  border-radius: 4px;
+}
+
+.message-list-container::-webkit-scrollbar-thumb {
+  background: #475569;
+  border-radius: 4px;
+}
+
+.message-list-container::-webkit-scrollbar-thumb:hover {
+  background: #64748b;
 }
