@@ -221,6 +221,8 @@ def process_order(order_data, payment_details):
 
 # --- Main Handler ---
 def lambda_handler(event, context):
+    print(event)
+    logger.info("Lambda handler invoked.")
     logger.info(f"DYNAMODB_TABLE_NAME: {DYNAMODB_TABLE_NAME}")
     logger.info(f"PRINTER_TOPIC: {PRINTER_TOPIC}")
     
