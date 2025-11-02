@@ -39,7 +39,7 @@ jobs:
       # This copies both your lambda_function.py and emailtemplate.html
       - name: Prepare deployment package
         run: |
-          cp lambda-function/* ./dist/
+          cp lambda-function/* ./lambda/
 
       # Step 5: Configure AWS credentials using your GitHub Secret
       - name: Configure AWS credentials
@@ -54,5 +54,5 @@ jobs:
         uses: aws-actions/aws-lambda-deploy@v1
         with:
           function-name: TableTap-OrderProcessing
-          code-artifacts-dir: ./dist
+          code-artifacts-dir: ./lambda/
           runtime: python3.13
