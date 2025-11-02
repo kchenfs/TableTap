@@ -52,3 +52,4 @@ jobs:
           function-name: TableTap-OrderProcessing
           code-artifacts-dir: ./package
           runtime: python3.13
+          handler: lambda_function.lambda_handler
