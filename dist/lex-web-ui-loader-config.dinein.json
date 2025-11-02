@@ -1,0 +1,31 @@
+{
+  "region": "ca-central-1",
+  "cognito": {
+    "poolId": "ca-central-1:ed7a2f13-8e6f-45b7-99e8-1fb658f2f207",
+    "region": "ca-central-1"
+  },
+  "lex": {
+    "v2BotId": "S832QRVZP3",
+    "v2BotAliasId": "6JNOFO6XPY",
+    "v2BotLocaleId": "en_US",
+    "region": "ca-central-1",
+    "initialText": "Welcome to Momotaro Sushi, what would you like to order?"
+  },
+  "ui": {
+    "parentOrigin": "https://dine-in.momotarosushi.ca",
+    "toolbarTitle": "Momotaro",
+    "toolbarLogo": "",
+    "enableLogin": false,
+    "closeOnFulfillment": true
+  },
+  "iframe": {
+    "iframeOrigin": "https://dine-in.momotarosushi.ca",
+    "iframeSrcPath": "/dist/index.html#/?lexWebUiEmbed=true",
+    "shouldLoadIframeMinimized": true
+  },
+  "loader": {
+    "baseUrl": "https://dine-in.momotarosushi.ca",
+    "cssPath": "/dist/lex-web-ui-loader.css",
+    "jsPath": "/dist/lex-web-ui-loader.js"
+  }
+}
