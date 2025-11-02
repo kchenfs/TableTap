@@ -1,91 +1,191 @@
-/* Example custom css file for lex-web-ui. Entire file is commented out as a default. Uncomment and
- adjust as needed.
+/**
+ * Custom Chatbot Styles for Lex Web UI
+ * Based on the "Momotaro Sushi" website theme (Dark/Slate)
+ *
+ * Font Family: Inter
+ * Colors:
+ * - Background (slate-900): #0F172A
+ * - UI Elements (slate-800): #1E293B
+ * - UI Hover (slate-700):   #334155
+ * - Bright Text (slate-50):  #F8FAFC
+ * - Sub-heading (slate-200): #E2E8F0
+ * - Body Text (slate-300):   #CBD5E1
+ * - Muted Text (slate-400):  #94A3B8
+ * - Borders (slate-800/ring): #1E293B or rgba(241, 245, 249, 0.1)
+ * Radius: rounded-lg (8px)
+ */
 
-.toolbar.theme--dark {
-    background-color: #2b2b2b !important;
+/* --- Import Google Font --- */
+@import url('https://rsms.me/inter/inter.css');
+
+/* --- Overall Font --- */
+.lex-web-ui, .v-application {
+  font-family: 'Inter', 'Inter var', sans-serif !important;
 }
 
+/* --- Toolbar (Header) --- */
+/* Matches the site's sticky header */
+.toolbar.v-toolbar.bg-red,
+.toolbar.v-toolbar.bg-blue,
+.toolbar.v-toolbar.bg-green,
+.toolbar.v-toolbar.bg-grey,
+.toolbar.v-toolbar.bg-black {
+  background-color: #0F172A !important; /* bg-slate-900 */
+  border-bottom: 1px solid #1E293B !important; /* border-slate-800 */
+}
+
+/* Toolbar title - matching site title */
 .toolbar__title {
-  font-family:"Sans-serif" !important;
-  font-size: 1.875em !important;
-  color: #ffffff !important;
+  font-family: 'Inter', 'Inter var', sans-serif !important;
+  font-size: 18px !important;
+  color: #F8FAFC !important; /* text-slate-50 */
+  font-weight: 600 !important; /* font-semibold */
 }
 
+/* --- Minimized Chat Button --- */
+/* Matches the site's "Cart" button */
+button.min-button {
+  background-color: #1E293B !important; /* bg-slate-800 */
+  border: 1px solid rgba(241, 245, 249, 0.1) !important; /* ring-slate-100/10 */
+  border-radius: 8px !important; /* rounded-lg */
+}
+
+button.min-button:hover {
+  background-color: #334155 !important; /* hover:bg-slate-700 */
+}
+
+/* --- Chat Window Background --- */
 .message-list-container {
-  background-color: #dcdbdc !important
+  background-color: #0F172A !important; /* bg-slate-900 */
 }
 
+/* --- Message Bubbles --- */
+
+/* Bot message bubble */
+/* Matches UI elements like search bar and category links */
 .message-bot .message-bubble {
-    background-color: #eeedeb !important;
+  background-color: #1E293B !important; /* bg-slate-800 */
 }
 
+/* User message bubble */
+/* Uses a slightly lighter color for contrast, like a hover state */
 .message-human .message-bubble {
-    background-color: #afcffa !important;
+  background-color: #334155 !important; /* bg-slate-700 */
 }
 
-.message-bubble p {
-    margin-bottom: 8px;
-}
-
-.message-bubble p:last-child {
-    margin-bottom: 0px;
-}
-
-.message-bubble .message-text {
-    padding-left:  0;
-    padding-right: 0;
-    line-height: 1.6;
-    font-size: 1rem;
-}
-
+/* All message bubbles - matching rounded corners */
 .message-bubble {
-    border-radius: 10px !important;
-    padding: 2px 18px !important;
+  border-radius: 8px !important; /* rounded-lg */
+  padding: 10px 16px !important;
 }
 
+/* --- Message Text --- */
+
+/* Text inside message bubbles */
+/* Matches site's item titles for clarity */
+.message-bubble .message-text {
+  font-family: 'Inter', 'Inter var', sans-serif !important;
+  line-height: 1.6;
+  font-size: 14px !important; /* text-sm */
+  color: #E2E8F0 !important; /* text-slate-200 */
+}
+
+/* General message text color override */
 .message-text {
-  color: #000000;
-  width: 100%;
+  color: #E2E8F0 !important; /* text-slate-200 */
 }
 
+/* --- Response Cards --- */
+
+/* The card container itself */
+.v-card {
+  background-color: #1E293B !important; /* bg-slate-800 */
+  border-radius: 8px !important; /* rounded-lg */
+  border: 1px solid rgba(241, 245, 249, 0.1) !important;
+}
+
+/* Response Card Title */
 .headline {
-    font-size: 1.2rem !important;
-    line-height: 1.4 !important;
+  font-family: 'Inter', 'Inter var', sans-serif !important;
+  font-size: 1rem !important; /* 16px, text-base */
+  font-weight: 500 !important; /* font-medium */
+  color: #E2E8F0 !important; /* text-slate-200 */
+  line-height: 1.4 !important;
 }
 
 .card__title {
-    padding: 10px 16px !important;
+  padding: 12px 16px !important;
 }
 
+/* Response Card Body Text */
+/* Matches the site's item descriptions */
 .card__text {
-    padding: 8px 16px 16px !important;
-    line-height: 1.4;
+  font-family: 'Inter', 'Inter var', sans-serif !important;
+  font-size: 0.875rem !important; /* 14px, text-sm */
+  color: #94A3B8 !important; /* text-slate-400 */
+  padding: 8px 16px 16px !important;
+  line-height: 1.5;
 }
 
-.card__title.card__title--primary {
-    background-color: #eeedeb !important;
-}
-
-
-.input-group--text-field input,
-.input-group--text-field textarea,
-.input-group--text-field label {
-    font-size: 14px !important;
-}
-
-.card__actions .btn {
+/* Response Card Buttons */
+/* Matches the site's "Add" button */
+.v-card-actions .v-btn {
+  font-family: 'Inter', 'Inter var', sans-serif !important;
   margin: 4px 4px !important;
-  font-size: 1em !important;
+  font-size: 0.875rem !important; /* 14px, text-sm */
   min-width: 44px !important;
-  background-color: #afcffa !important;
+  background-color: #1E293B !important; /* bg-slate-800 */
+  color: #CBD5E1 !important; /* text-slate-300 */
+  border-radius: 8px !important; /* rounded-lg */
+  border: 1px solid rgba(241, 245, 249, 0.1) !important; /* ring-slate-100/10 */
+  text-transform: none !important; /* Site buttons are not uppercase */
 }
 
-*/
-
-button.min-button {
-    border-radius: 60px;
+/* Matches the site's "Add" button hover */
+.v-card-actions .v-btn:hover {
+  background-color: #E2E8F0 !important; /* hover:bg-slate-200 */
+  color: #0F172A !important; /* hover:text-slate-900 */
 }
 
-.message-button {
-    display: none;
+
+/* --- Input Text Area --- */
+
+/* Container for the input bar */
+.input-group.input-group--text-field {
+  background-color: #0F172A !important; /* Match chat background */
+  padding: 10px 16px !important;
+  border-top: 1px solid #1E293B !important; /* border-slate-800 */
+}
+
+/* The text input field itself */
+/* Matches the site's search bar */
+.input-group--text-field input,
+.input-group--text-field textarea {
+  font-family: 'Inter', 'Inter var', sans-serif !important;
+  font-size: 14px !important;
+  color: #F8FAFC !important; /* text-slate-50 */
+  background-color: #1E293B !important; /* bg-slate-800 */
+  border-radius: 8px !important; /* rounded-lg */
+  border: 1px solid rgba(241, 245, 249, 0.1) !important; /* ring-slate-100/10 */
+  padding: 10px 16px !important;
+}
+
+/* Chat input placeholder text */
+.input-group--text-field label {
+  font-family: 'Inter', 'Inter var', sans-serif !important;
+  font-size: 14px !important;
+  color: #94A3B8 !important; /* placeholder:text-slate-400 */
+}
+
+/* Style the Send button */
+.input-group .v-btn {
+  background-color: #1E293B !important; /* bg-slate-800 */
+  color: #CBD5E1 !important; /* text-slate-300 */
+  border-radius: 8px !important;
+  border: 1px solid rgba(241, 245, 249, 0.1) !important;
+  margin-left: 8px !important;
+}
+
+.input-group .v-btn:hover {
+  background-color: #334155 !important; /* hover:bg-slate-700 */
 }
