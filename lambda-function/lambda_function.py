@@ -70,7 +70,7 @@ def send_receipt_email(recipient_email, order_details, payment_details, items_li
         if paid_at_iso:
             try:
                 date_obj = datetime.fromisoformat(paid_at_iso.replace('Z', '+00:00'))
-                date_text = date_obj.strftime('%b %d, %Y') # Format: Oct 09, 2025
+                date_text = date_obj.strftime('%b %d, %Y')  # Format: Oct 09, 2025
             except (ValueError, TypeError) as e:
                 logger.error(f"Could not parse date {paid_at_iso}: {e}")
 
@@ -151,14 +151,28 @@ def process_order(order_data, payment_details):
     order_data_decimal = replace_floats_with_decimals(order_data)
     total_price = Decimal(str(order_data_decimal.get('total', '0'))).quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
     
-    # --- PARSE ITEMS JSON ---
-    items_json = order_data_decimal.get('items_json')
+    # --------------------------------------------------------------
+    #  PARSE ITEMS – SUPPORT BOTH 'items_json' (Stripe) AND 'items' (Dine-in)
+    # --------------------------------------------------------------
     items = []
-    if items_json:
+    items_json = order_data_decimal.get('items_json')
+
+    if items_json:  # Stripe / takeout: items come as JSON string
         try:
             items = replace_floats_with_decimals(json.loads(items_json))
+            logger.debug("Items parsed from items_json (Stripe path)")
         except (json.JSONDecodeError, TypeError) as e:
             logger.warning(f"Could not parse items_json: {e}")
+
+    elif 'items' in order_data_decimal:  # Dine-in: items come as direct list
+        try:
+            items = replace_floats_with_decimals(order_data_decimal['items'])
+            logger.debug("Items taken from direct 'items' list (Dine-in path)")
+        except Exception as e:
+            logger.warning(f"Could not process direct items list: {e}")
+    else:
+        logger.info("No items data found in payload – proceeding with empty list")
+    # --------------------------------------------------------------
 
     # 1. Save to DynamoDB
     item_to_save_in_db = {
@@ -214,7 +228,6 @@ def process_order(order_data, payment_details):
             'subtotalCents': order_data.get('subtotal_cents'),
             'taxTotalCents': order_data.get('tax_total_cents')
         }
-        # --- PASS PARSED ITEMS TO EMAIL FUNCTION ---
         send_receipt_email(recipient_email, order_details_for_email, payment_details, items)
 
     return True
@@ -287,48 +300,3 @@ def lambda_handler(event, context):
             'headers': headers,
             'body': json.dumps({'error': 'An internal server error occurred.'})
         }
-    logger.info(f"PRINTER_TOPIC: {PRINTER_TOPIC}")
-    
-    try:
-        if 'stripe-signature' in event.get('headers', {}):
-            payload = event['body']
-            sig_header = event['headers']['stripe-signature']
-            stripe_event = stripe.Webhook.construct_event(payload=payload, sig_header=sig_header, secret=webhook_secret)
-
-            if stripe_event['type'] == 'payment_intent.succeeded':
-                payment_intent = stripe_event['data']['object']
-                metadata = dict(payment_intent.get('metadata', {}))
-                
-                latest_charge_id = payment_intent.get('latest_charge')
-                customer_email, customer_name, payment_details = None, None, {}
-
-                if latest_charge_id:
-                    try:
-                        charge = stripe.Charge.retrieve(latest_charge_id)
-                        customer_email = charge.billing_details.get('email')
-                        customer_name = charge.billing_details.get('name')
-                        payment_details = charge.payment_method_details
-                        logger.info(f"Successfully retrieved Charge {latest_charge_id}")
-                    except Exception as e:
-                        logger.error(f"Could not retrieve charge {latest_charge_id}: {e}")
-                
-                order_data = {
-                    'receipt_email': customer_email,
-                    'customerName': customer_name,
-                    'paymentId': payment_intent['id'],
-                    'paymentStatus': 'PAID',
-                    'transaction_timestamp': payment_intent.get('created'),
-                    **metadata
-                }
-                
-                process_order(order_data, payment_details)
-        else:
-            order_data = json.loads(event['body'])
-            order_data['paymentStatus'] = 'Dine-In'
-            process_order(order_data, {})
-
-        return {'statusCode': 200, 'body': json.dumps({'message': 'Order processed successfully'})}
-        
-    except Exception as e:
-        logger.error("Critical error in lambda_handler", exc_info=True)
-        return {'statusCode': 500, 'body': json.dumps({'error': 'An internal server error occurred.'})}
