@@ -105,7 +105,6 @@ services:
       - ./nginx-load-balancer.conf:/etc/nginx/nginx.conf:ro
       - ./certbot/conf:/etc/letsencrypt
       - ./certbot/www:/var/www/certbot
-      - ./dist:/usr/share/nginx/html/dist:ro
     restart: unless-stopped
     networks:
       - restaurant-network
