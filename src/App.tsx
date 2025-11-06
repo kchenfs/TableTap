@@ -54,40 +54,34 @@ function MenuApp() {
   const appMode = import.meta.env.VITE_APP_MODE || 'dine-in';
   const tableId = import.meta.env.VITE_TABLE_ID;
 
-
   useEffect(() => {
-  const initChatbot = () => {
-    if (window.ChatBotUiLoader) {
-      console.log('Initializing chatbot from CloudFront...');
+    const initChatbot = () => {
+      if (window.ChatBotUiLoader) {
+        console.log('Initializing chatbot from CloudFront...');
 
-      const loaderOptions = {
-        shouldLoadConfigFromJsonFile: true,
-        // FORCE CloudFront — NEVER use currentOrigin for assets
-        baseUrl: 'https://d238pk92pz45o2.cloudfront.net'
-      };
+        const loaderOptions = {
+          shouldLoadConfigFromJsonFile: true,
+          // FORCE CloudFront — NEVER use currentOrigin for assets
+          baseUrl: 'https://d238pk92pz45o2.cloudfront.net'
+        };
 
-      const iframeLoader = new window.ChatBotUiLoader.IframeLoader(loaderOptions);
-      
-      iframeLoader.load()
-        .then(() => {
-          console.log('✅ Chatbot loaded successfully from CloudFront!');
-        })
-        .catch((error) => {
-          console.error('❌ Chatbot failed to load:', error);
-        });
-    } else {
-      console.warn('ChatBotUiLoader not available yet, retrying...');
-      setTimeout(initChatbot, 100);
-    }
-  };
+        const iframeLoader = new window.ChatBotUiLoader.IframeLoader(loaderOptions);
+        
+        iframeLoader.load()
+          .then(() => {
+            console.log('✅ Chatbot loaded successfully from CloudFront!');
+          })
+          .catch((error) => {
+            console.error('❌ Chatbot failed to load:', error);
+          });
+      } else {
+        console.warn('ChatBotUiLoader not available yet, retrying...');
+        setTimeout(initChatbot, 100);
+      }
+    };
 
-  // Start trying after 500ms (scripts are already loaded)
-  const timeoutId = setTimeout(initChatbot, 500);
-  return () => clearTimeout(timeoutId);
-}, []);
-
-    // Give the page a bit more time to load all assets
-    const timeoutId = setTimeout(initChatbot, 1000);
+    // Start trying after 500ms (scripts are already loaded)
+    const timeoutId = setTimeout(initChatbot, 500);
     return () => clearTimeout(timeoutId);
   }, []);
 
