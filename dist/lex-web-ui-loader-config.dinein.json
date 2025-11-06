@@ -9,7 +9,7 @@
     "v2BotAliasId": "6JNOFO6XPY",
     "v2BotLocaleId": "en_US",
     "region": "ca-central-1",
-    "initialText": "Welcome to Momotaro Sushi, what would you like to order?"
+    "initialText": "Dine-In, This is being developed! Please do not use this bot"
   },
   "ui": {
     "parentOrigin": "https://dine-in.momotarosushi.ca",
