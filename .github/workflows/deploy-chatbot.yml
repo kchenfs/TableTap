@@ -1,0 +1,51 @@
+# .github/workflows/deploy-chatbot.yml
+
+name: Deploy Chatbot Assets to S3/CloudFront
+
+# Triggers this workflow on a push to the 'main' branch
+on:
+  push:
+    branches:
+      - feature/take-stripe-integration # Or 'master', 'production', etc.
+    
+  
+  # Allows you to run this workflow manually from the Actions tab
+  workflow_dispatch:
+
+# Permissions needed for the OIDC (password-less) AWS login
+
+jobs:
+  deploy-assets:
+    runs-on: ubuntu-latest
+    
+    steps:
+      # Step 1: Check out the repository code
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      # Step 2: Configure AWS credentials using OIDC
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          # This is the ARN of the IAM Role you create in AWS
+          role-to-assume: ${{ secrets.AWS_IAM_ROLE_FOR_OIDC_ARN }}
+          aws-region: ca-central-1 # As specified in your request
+
+      # Step 3: Upload/Sync the ./dist folder to your S3 bucket
+      - name: Sync ./dist folder with S3 bucket
+        run: |
+          aws s3 sync ./dist s3://momotaro-chatbot-assets \
+            --delete \
+            --cache-control "public, max-age=31536000, immutable"
+        # --delete:  Removes any files in S3 that are no longer in your ./dist folder
+        # --cache-control: Sets a 1-year cache on all files for best CDN performance
+
+      # Step 4: Invalidate the CloudFront cache
+      - name: Create CloudFront invalidation
+        run: |
+          aws cloudfront create-invalidation \
+            --distribution-id E27DGNJ30Z36GD \
+            --paths "/*"
+        # --distribution-id: Your specific ID from the CloudFormation output
+        # --paths "/*":      This is a wildcard that tells CloudFront to 
+        #                   clear its cache for ALL files immediately.
