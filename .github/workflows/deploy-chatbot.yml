@@ -12,12 +12,16 @@ on:
   # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
 
-# Permissions needed for the OIDC (password-less) AWS login
 
 jobs:
   deploy-assets:
     runs-on: ubuntu-latest
     
+    permissions:
+      id-token: write
+      contents: read
+
+
     steps:
       # Step 1: Check out the repository code
       - name: Check out repository
