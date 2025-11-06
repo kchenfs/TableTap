@@ -1,28 +1,27 @@
 AWSTemplateFormatVersion: '2010-09-09'
 Description: |
   Deploys a private S3 bucket and a CloudFront distribution 
-  to securely serve the chatbot static assets.
+  to securely serve the chatbot static assets. INCLUDES CORS POLICY.
 
 Parameters:
   S3BucketName:
     Type: String
     Description: A globally unique name for the S3 bucket (e.g., momotarosushi-chatbot-assets).
+    Default: momotaro-chatbot-assets # Added default since you've created it
 
 Resources:
-  # 1. The S3 bucket to store the 'dist' folder contents
+  # 1. The S3 bucket (no changes)
   AssetsBucket:
     Type: AWS::S3::Bucket
     Properties:
       BucketName: !Ref S3BucketName
-      # Block all public access; CloudFront will access it via OAC
       PublicAccessBlockConfiguration:
         BlockPublicAcls: true
         BlockPublicPolicy: true
         IgnorePublicAcls: true
         RestrictPublicBuckets: true
 
-  # 2. The CloudFront Origin Access Control (OAC)
-  # This allows CloudFront to securely access the private S3 bucket
+  # 2. The CloudFront OAC (no changes)
   CloudFrontOAC:
     Type: AWS::CloudFront::OriginAccessControl
     Properties:
@@ -32,7 +31,34 @@ Resources:
         SigningBehavior: always
         SigningProtocol: sigv4
 
-  # 3. The CloudFront Distribution (CDN)
+  # 3. NEW: The Response Headers Policy to fix CORS
+  CloudFrontResponseHeadersPolicy:
+    Type: AWS::CloudFront::ResponseHeadersPolicy
+    Properties:
+      ResponseHeadersPolicyConfig:
+        Name: !Sub 'CORS-Policy-for-${S3BucketName}'
+        Comment: 'CORS policy to allow dine-in and take-out domains'
+        CorsConfig:
+          # This is the 'Access-Control-Allow-Origin' header
+          AccessControlAllowOrigins:
+            Items:
+              - 'https://dine-in.momotarosushi.ca'
+              - 'https://take-out.momotarosushi.ca'
+          # This is the 'Access-Control-Allow-Methods' header
+          AccessControlAllowMethods:
+            Items:
+              - GET
+              - HEAD
+              - OPTIONS
+          # This is the 'Access-Control-Allow-Headers' header
+          AccessControlAllowHeaders:
+            Items:
+              - '*' # Allow all headers
+          AccessControlAllowCredentials: false
+          AccessControlMaxAgeSec: 3600 # Cache preflight (OPTIONS) for 1 hour
+          OriginOverride: true
+  
+  # 4. The CloudFront Distribution (UPDATED)
   CloudFrontDistribution:
     Type: AWS::CloudFront::Distribution
     Properties:
@@ -40,44 +66,39 @@ Resources:
         Comment: !Sub 'CDN for ${S3BucketName}'
         Enabled: true
         HttpVersion: http2and3
-        
-        # --- Origin Configuration ---
         Origins:
           - Id: !Sub 'S3-Origin-${S3BucketName}'
             DomainName: !GetAtt AssetsBucket.RegionalDomainName
-            # Use the Origin Access Control
             OriginAccessControlId: !Ref CloudFrontOAC
             S3OriginConfig:
-              OriginAccessIdentity: '' # Must be empty when using OAC
-        
-        # --- Cache Behavior ---
+              OriginAccessIdentity: ''
         DefaultCacheBehavior:
           TargetOriginId: !Sub 'S3-Origin-${S3BucketName}'
           ViewerProtocolPolicy: redirect-to-https
           AllowedMethods:
             - GET
             - HEAD
-            - OPTIONS
+            - OPTIONS # <-- Must also allow OPTIONS for CORS
           CachedMethods:
             - GET
             - HEAD
+            - OPTIONS # <-- Must also cache OPTIONS
           Compress: true
           ForwardedValues:
             QueryString: false
             Cookies:
               Forward: none
-          DefaultTTL: 86400 # Cache for 1 day
+          DefaultTTL: 86400
           MinTTL: 0
           MaxTTL: 31536000
-        
-        # --- Default SSL Certificate ---
-        # By removing the 'Aliases' and 'ViewerCertificate' properties,
-        # CloudFront will use its default *.cloudfront.net certificate.
+          
+          # --- THIS IS THE NEW LINE THAT ATTACHES THE POLICY ---
+          ResponseHeadersPolicyId: !Ref CloudFrontResponseHeadersPolicy
+          
         ViewerCertificate:
           CloudFrontDefaultCertificate: true
 
-  # 4. S3 Bucket Policy
-  # This policy allows the CloudFront distribution to read from the private bucket
+  # 5. S3 Bucket Policy (no changes)
   AssetsBucketPolicy:
     Type: AWS::S3::BucketPolicy
     Properties:
@@ -99,11 +120,9 @@ Outputs:
   BucketName:
     Description: Name of the S3 bucket
     Value: !Ref AssetsBucket
-
   DistributionId:
     Description: ID of the CloudFront distribution
     Value: !Ref CloudFrontDistribution
-
   DistributionDomainName:
     Description: The default *.cloudfront.net domain name to use in your code
     Value: !GetAtt CloudFrontDistribution.DomainName
