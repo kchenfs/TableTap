@@ -1,0 +1,109 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: |
+  Deploys a private S3 bucket and a CloudFront distribution 
+  to securely serve the chatbot static assets.
+
+Parameters:
+  S3BucketName:
+    Type: String
+    Description: A globally unique name for the S3 bucket (e.g., momotarosushi-chatbot-assets).
+
+Resources:
+  # 1. The S3 bucket to store the 'dist' folder contents
+  AssetsBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Ref S3BucketName
+      # Block all public access; CloudFront will access it via OAC
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+
+  # 2. The CloudFront Origin Access Control (OAC)
+  # This allows CloudFront to securely access the private S3 bucket
+  CloudFrontOAC:
+    Type: AWS::CloudFront::OriginAccessControl
+    Properties:
+      OriginAccessControlConfig:
+        Name: !Sub 'OAC-for-${S3BucketName}'
+        OriginAccessControlOriginType: s3
+        SigningBehavior: always
+        SigningProtocol: sigv4
+
+  # 3. The CloudFront Distribution (CDN)
+  CloudFrontDistribution:
+    Type: AWS::CloudFront::Distribution
+    Properties:
+      DistributionConfig:
+        Comment: !Sub 'CDN for ${S3BucketName}'
+        Enabled: true
+        HttpVersion: http2and3
+        
+        # --- Origin Configuration ---
+        Origins:
+          - Id: !Sub 'S3-Origin-${S3BucketName}'
+            DomainName: !GetAtt AssetsBucket.RegionalDomainName
+            # Use the Origin Access Control
+            OriginAccessControlId: !Ref CloudFrontOAC
+            S3OriginConfig:
+              OriginAccessIdentity: '' # Must be empty when using OAC
+        
+        # --- Cache Behavior ---
+        DefaultCacheBehavior:
+          TargetOriginId: !Sub 'S3-Origin-${S3BucketName}'
+          ViewerProtocolPolicy: redirect-to-https
+          AllowedMethods:
+            - GET
+            - HEAD
+            - OPTIONS
+          CachedMethods:
+            - GET
+            - HEAD
+          Compress: true
+          ForwardedValues:
+            QueryString: false
+            Cookies:
+              Forward: none
+          DefaultTTL: 86400 # Cache for 1 day
+          MinTTL: 0
+          MaxTTL: 31536000
+        
+        # --- Default SSL Certificate ---
+        # By removing the 'Aliases' and 'ViewerCertificate' properties,
+        # CloudFront will use its default *.cloudfront.net certificate.
+        ViewerCertificate:
+          CloudFrontDefaultCertificate: true
+
+  # 4. S3 Bucket Policy
+  # This policy allows the CloudFront distribution to read from the private bucket
+  AssetsBucketPolicy:
+    Type: AWS::S3::BucketPolicy
+    Properties:
+      Bucket: !Ref AssetsBucket
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Sid: 'AllowCloudFrontReadAccess'
+            Effect: Allow
+            Principal:
+              Service: cloudfront.amazonaws.com
+            Action: 's3:GetObject'
+            Resource: !Sub 'arn:aws:s3:::${S3BucketName}/*'
+            Condition:
+              StringEquals:
+                'AWS:SourceArn': !Sub 'arn:aws:cloudfront::${AWS::AccountId}:distribution/${CloudFrontDistribution}'
+
+Outputs:
+  BucketName:
+    Description: Name of the S3 bucket
+    Value: !Ref AssetsBucket
+
+  DistributionId:
+    Description: ID of the CloudFront distribution
+    Value: !Ref CloudFrontDistribution
+
+  DistributionDomainName:
+    Description: The default *.cloudfront.net domain name to use in your code
+    Value: !GetAtt CloudFrontDistribution.DomainName
