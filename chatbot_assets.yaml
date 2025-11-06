@@ -126,3 +126,6 @@ Outputs:
   DistributionDomainName:
     Description: The default *.cloudfront.net domain name to use in your code
     Value: !GetAtt CloudFrontDistribution.DomainName
+  BucketName:
+    Description: Name of the S3 bucket
+    Value: !Ref AssetsBucket
