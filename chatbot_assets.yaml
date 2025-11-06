@@ -1,8 +1,5 @@
 AWSTemplateFormatVersion: '2010-09-09'
-Description: |
-  Deploys a private S3 bucket and a CloudFront distribution 
-  to securely serve the chatbot static assets. INCLUDES CORS POLICY.
-
+Description: 'Deploys a private S3 bucket and a CloudFront distribution to securely serve the chatbot static assets. INCLUDES CORS POLICY.'
 Parameters:
   S3BucketName:
     Type: String
