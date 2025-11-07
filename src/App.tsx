@@ -61,8 +61,8 @@ function MenuApp() {
 
         // Determine config file based on app mode
         const configFileName = appMode === 'takeout' 
-          ? 'lex-web-ui-loader-takeout.json'
-          : 'lex-web-ui-loader-dinein.json';
+          ? 'lex-web-ui-loader-config-takeout.json'
+          : 'lex-web-ui-loader-config-dinein.json';
         
         const configUrl = `https://d2ibqiw1xziqq9.cloudfront.net/${configFileName}`;
 
