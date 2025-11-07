@@ -48,7 +48,7 @@ jobs:
       - name: Create CloudFront invalidation
         run: |
           aws cloudfront create-invalidation \
-            --distribution-id E27DGNJ30Z36GD \
+            --distribution-id E1U7V8A4IFQBCD \
             --paths "/*"
         # --distribution-id: Your specific ID from the CloudFormation output
         # --paths "/*":      This is a wildcard that tells CloudFront to 
