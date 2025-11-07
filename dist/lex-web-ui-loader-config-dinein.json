@@ -19,7 +19,6 @@
     "closeOnFulfillment": true
   },
   "iframe": {
-    "iframeOrigin": "https://dine-in.momotarosushi.ca",
     "iframeSrcPath": "https://d2ibqiw1xziqq9.cloudfront.net/parent.html",
     "shouldLoadIframeMinimized": true
   },
