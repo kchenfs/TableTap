@@ -59,11 +59,21 @@ function MenuApp() {
       if (window.ChatBotUiLoader) {
         console.log('Initializing chatbot from CloudFront...');
 
+        // Determine config file based on app mode
+        const configFileName = appMode === 'takeout' 
+          ? 'lex-web-ui-loader-takeout.json'
+          : 'lex-web-ui-loader-dinein.json';
+        
+        const configUrl = `https://d2ibqiw1xziqq9.cloudfront.net/${configFileName}`;
+
         const loaderOptions = {
           shouldLoadConfigFromJsonFile: true,
           // FORCE CloudFront — NEVER use currentOrigin for assets
-          baseUrl: 'https://d2ibqiw1xziqq9.cloudfront.net'
+          baseUrl: 'https://d2ibqiw1xziqq9.cloudfront.net',
+          configUrl: configUrl
         };
+
+        console.log(`Loading config from: ${configUrl}`);
 
         const iframeLoader = new window.ChatBotUiLoader.IframeLoader(loaderOptions);
         
@@ -83,7 +93,7 @@ function MenuApp() {
     // Start trying after 500ms (scripts are already loaded)
     const timeoutId = setTimeout(initChatbot, 500);
     return () => clearTimeout(timeoutId);
-  }, []);
+  }, [appMode]);
 
   const menuCategories = useMemo(() => organizeMenuByCategory(MenuItems), [MenuItems]);
   const total = useMemo(() => {
