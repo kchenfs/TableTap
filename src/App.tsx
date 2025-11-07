@@ -62,7 +62,7 @@ function MenuApp() {
         const loaderOptions = {
           shouldLoadConfigFromJsonFile: true,
           // FORCE CloudFront — NEVER use currentOrigin for assets
-          baseUrl: 'https://d238pk92pz45o2.cloudfront.net'
+          baseUrl: 'https://d2ibqiw1xziqq9.cloudfront.net'
         };
 
         const iframeLoader = new window.ChatBotUiLoader.IframeLoader(loaderOptions);
