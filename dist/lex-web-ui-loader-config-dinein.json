@@ -20,12 +20,10 @@
   },
   "iframe": {
     "iframeOrigin": "https://dine-in.momotarosushi.ca",
-    "iframeSrcPath": "/dist/index.html#/?lexWebUiEmbed=true",
+    "iframeSrcPath": "https://d2ibqiw1xziqq9.cloudfront.net/parent.html",
     "shouldLoadIframeMinimized": true
   },
   "loader": {
-    "baseUrl": "https://dine-in.momotarosushi.ca",
-    "cssPath": "/dist/lex-web-ui-loader.css",
-    "jsPath": "/dist/lex-web-ui-loader.js"
+    "baseUrl": "https://d2ibqiw1xziqq9.cloudfront.net"
   }
 }
