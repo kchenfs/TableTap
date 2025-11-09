@@ -19,7 +19,7 @@
     "closeOnFulfillment": true
   },
   "iframe": {
-    "iframeSrcPath": "/index.html#/?lexWebUiEmbed=true",
+    "iframeSrcPath": "/parent.html",
     "shouldLoadIframeMinimized": true
   },
   "loader": {
