@@ -54,54 +54,70 @@ function MenuApp() {
   const appMode = import.meta.env.VITE_APP_MODE || 'dine-in';
   const tableId = import.meta.env.VITE_TABLE_ID;
 
+// --- CHATBOT LOADER ---
   useEffect(() => {
-    const initChatbot = () => {
-      if (window.ChatBotUiLoader) {
-        console.log('✓ ChatBotUiLoader available, initializing...');
+    const CLOUDFRONT_URL = "https://d2ibqiw1xziqq9.cloudfront.net";
 
-        // Determine config file based on app mode
-        const configFileName = appMode === 'takeout' 
-          ? 'lex-web-ui-loader-config-takeout.json'
-          : 'lex-web-ui-loader-config-dinein.json';
+    let configFileName;
+    if (window.location.origin.includes("dine-in")) {
+      configFileName = "lex-web-ui-loader-config-dinein.json";
+    } else if (window.location.origin.includes("take-out")) {
+      configFileName = "lex-web-ui-loader-config-takeout.json";
+    } else {
+      console.warn("Chatbot: No matching config for this origin:", window.location.origin);
+      configFileName = "lex-web-ui-loader-config-dinein.json"; // Default
+    }
+
+    const script = document.createElement('script');
+    script.src = `${CLOUDFRONT_URL}/lex-web-ui-loader.js`;
+    script.async = true;
+
+    script.onload = () => {
+      if (window.ChatBotUiLoader) {
         
+        // *** THIS IS THE FIX ***
+        // The loader needs to know where to find files (baseUrl)
+        // and which config to load (configUrl).
         const loaderOptions = {
-          shouldLoadConfigFromJsonFile: true,
-          baseUrl: 'https://d2ibqiw1xziqq9.cloudfront.net',
-          configUrl: `https://d2ibqiw1xziqq9.cloudfront.net/${configFileName}`,
-          elementId: 'lex-web-ui' // Explicitly set the container element ID
+          baseUrl: CLOUDFRONT_URL,
+          configUrl: `${CLOUDFRONT_URL}/${configFileName}`
         };
 
-        console.log(`Loading chatbot config from: ${loaderOptions.configUrl}`);
+        // 1. Initialize the loader with the options
+        const iframeLoader = new window.ChatBotUiLoader.IframeLoader(loaderOptions);
 
-        try {
-          const iframeLoader = new window.ChatBotUiLoader.IframeLoader(loaderOptions);
+        // 2. Define overrides for security (parentOrigin) and
+        //    cross-origin communication (iframeOrigin)
+        const chatbotUiConfigOverrides = {
+          ui: {
+            parentOrigin: window.location.origin
+          },
+          iframe: {
+            iframeOrigin: CLOUDFRONT_URL
+          }
+        };
+
+        // 3. Load the iframe using the overrides
+        iframeLoader.load(chatbotUiConfigOverrides)
+          .then(() => console.log('✅ Chatbot UI loaded successfully.'))
+          .catch((err) => console.error('❌ Chatbot UI failed to load:', err));
           
-          iframeLoader.load()
-            .then(() => {
-              console.log('✅ Chatbot loaded successfully!');
-            })
-            .catch((error) => {
-              console.error('❌ Chatbot failed to load:', error);
-              console.error('Error details:', {
-                message: error.message,
-                stack: error.stack,
-                loaderOptions
-              });
-            });
-        } catch (error) {
-          console.error('❌ Error creating IframeLoader:', error);
-        }
       } else {
-        console.warn('ChatBotUiLoader not available yet, retrying in 100ms...');
-        setTimeout(initChatbot, 100);
+        console.error("ChatBotUiLoader object not found on window.");
       }
     };
+    
+    script.onerror = () => {
+      console.error("Failed to load the lex-web-ui-loader.js script.");
+    };
 
-    // Start initialization after a short delay to ensure script is loaded
-    const timeoutId = setTimeout(initChatbot, 500);
-    return () => clearTimeout(timeoutId);
-  }, [appMode]);
+    document.body.appendChild(script);
 
+    return () => {
+      document.body.removeChild(script);
+    };
+  }, []); // Empty array ensures this runs only once
+  // --- END CHATBOT LOADER ---
   const menuCategories = useMemo(() => organizeMenuByCategory(MenuItems), [MenuItems]);
   const total = useMemo(() => {
     const subtotal = cart.reduce((sum, item) => sum + (item.finalPrice * item.quantity), 0);
