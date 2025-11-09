@@ -54,51 +54,89 @@ function MenuApp() {
   const appMode = import.meta.env.VITE_APP_MODE || 'dine-in';
   const tableId = import.meta.env.VITE_TABLE_ID;
 
+  // Use ref to track if chatbot has been initialized
+  const chatbotInitialized = React.useRef(false);
+  const iframeLoaderRef = React.useRef<any>(null);
+
   useEffect(() => {
-    let isInitializing = false;
+    // Prevent multiple initializations
+    if (chatbotInitialized.current) {
+      console.log('Chatbot already initialized, skipping...');
+      return;
+    }
+
     let timeoutId: NodeJS.Timeout;
 
     const initChatbot = () => {
-      if (isInitializing) {
-        console.log('Already initializing, skipping...');
+      if (!window.ChatBotUiLoader) {
+        console.warn('ChatBotUiLoader not available yet, retrying in 100ms...');
+        timeoutId = setTimeout(initChatbot, 100);
         return;
       }
 
-      if (window.ChatBotUiLoader) {
-        isInitializing = true;
-        console.log('✓ ChatBotUiLoader available, initializing...');
+      console.log('✓ ChatBotUiLoader available, initializing...');
+      chatbotInitialized.current = true; // Mark as initialized
 
-        const configFileName = appMode === 'takeout' 
-          ? 'lex-web-ui-loader-config-takeout.json'
-          : 'lex-web-ui-loader-config-dinein.json';
-        
-        const loaderOptions = {
-          shouldLoadConfigFromJsonFile: true,
-          baseUrl: 'https://d2ibqiw1xziqq9.cloudfront.net',
-          configUrl: `https://d2ibqiw1xziqq9.cloudfront.net/${configFileName}`,
-          elementId: 'lex-web-ui'
-        };
-
-        console.log(`Loading chatbot config from: ${loaderOptions.configUrl}`);
-
-        try {
-          const iframeLoader = new window.ChatBotUiLoader.IframeLoader(loaderOptions);
-          
-          iframeLoader.load()
-            .then(() => {
-              console.log('✅ Chatbot loaded successfully!');
-            })
-            .catch((error) => {
-              console.error('❌ Chatbot failed to load:', error);
-              isInitializing = false; // Reset on error so it can retry if needed
-            });
-        } catch (error) {
-          console.error('❌ Error creating IframeLoader:', error);
-          isInitializing = false;
+      // Define the config inline instead of loading from file
+      const chatbotConfig = {
+        region: 'ca-central-1',
+        cognito: {
+          poolId: 'ca-central-1:ed7a2f13-8e6f-45b7-99e8-1fb658f2f207',
+          region: 'ca-central-1'
+        },
+        lex: {
+          v2BotId: 'S832QRVZP3',
+          v2BotAliasId: '6JNOFO6XPY',
+          v2BotLocaleId: 'en_US',
+          region: 'ca-central-1',
+          initialText: appMode === 'takeout' 
+            ? 'Take-out, This is being developed! Please do not use this bot'
+            : 'Dine-In, This is being developed! Please do not use this bot'
+        },
+        ui: {
+          parentOrigin: window.location.origin,
+          toolbarTitle: 'Momotaro',
+          toolbarLogo: '',
+          enableLogin: false,
+          closeOnFulfillment: true
+        },
+        iframe: {
+          iframeSrcPath: '/parent.html',
+          shouldLoadIframeMinimized: true
         }
-      } else {
-        console.warn('ChatBotUiLoader not available yet, retrying in 100ms...');
-        timeoutId = setTimeout(initChatbot, 100);
+      };
+      
+      const loaderOptions = {
+        baseUrl: 'https://d2ibqiw1xziqq9.cloudfront.net',
+        elementId: 'lex-web-ui',
+        iframeLoadTimeout: 20000,
+        configEventTimeout: 20000
+      };
+
+      console.log('Initializing with config:', chatbotConfig);
+      console.log('Loader options:', loaderOptions);
+
+      try {
+        iframeLoaderRef.current = new window.ChatBotUiLoader.IframeLoader(loaderOptions);
+        
+        // Pass config directly to load() instead of using shouldLoadConfigFromJsonFile
+        iframeLoaderRef.current.load(chatbotConfig)
+          .then(() => {
+            console.log('✅ Chatbot loaded successfully!');
+            console.log('Iframe should now exist:', !!document.querySelector('#lex-web-ui iframe'));
+          })
+          .catch((error) => {
+            console.error('❌ Chatbot failed to load:', error);
+            console.error('Error details:', {
+              message: error.message,
+              stack: error.stack,
+              loaderOptions,
+              chatbotConfig
+            });
+          });
+      } catch (error) {
+        console.error('❌ Error creating IframeLoader:', error);
+        chatbotInitialized.current = false; // Reset on creation error
       }
     };
 
@@ -106,10 +144,9 @@ function MenuApp() {
     
     return () => {
       clearTimeout(timeoutId);
-      isInitializing = false;
     };
-  }, [appMode]); // Only re-run if appMode changes
-
+  }, []); // Empty dependency array - only run once on mount
+  
   const menuCategories = useMemo(() => organizeMenuByCategory(MenuItems), [MenuItems]);
   const total = useMemo(() => {
     const subtotal = cart.reduce((sum, item) => sum + (item.finalPrice * item.quantity), 0);
