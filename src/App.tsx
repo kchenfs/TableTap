@@ -55,11 +55,19 @@ function MenuApp() {
   const tableId = import.meta.env.VITE_TABLE_ID;
 
   useEffect(() => {
+    let isInitializing = false;
+    let timeoutId: NodeJS.Timeout;
+
     const initChatbot = () => {
+      if (isInitializing) {
+        console.log('Already initializing, skipping...');
+        return;
+      }
+
       if (window.ChatBotUiLoader) {
+        isInitializing = true;
         console.log('✓ ChatBotUiLoader available, initializing...');
 
-        // Determine config file based on app mode
         const configFileName = appMode === 'takeout' 
           ? 'lex-web-ui-loader-config-takeout.json'
           : 'lex-web-ui-loader-config-dinein.json';
@@ -68,7 +76,7 @@ function MenuApp() {
           shouldLoadConfigFromJsonFile: true,
           baseUrl: 'https://d2ibqiw1xziqq9.cloudfront.net',
           configUrl: `https://d2ibqiw1xziqq9.cloudfront.net/${configFileName}`,
-          elementId: 'lex-web-ui' // Explicitly set the container element ID
+          elementId: 'lex-web-ui'
         };
 
         console.log(`Loading chatbot config from: ${loaderOptions.configUrl}`);
@@ -82,25 +90,25 @@ function MenuApp() {
             })
             .catch((error) => {
               console.error('❌ Chatbot failed to load:', error);
-              console.error('Error details:', {
-                message: error.message,
-                stack: error.stack,
-                loaderOptions
-              });
+              isInitializing = false; // Reset on error so it can retry if needed
             });
         } catch (error) {
           console.error('❌ Error creating IframeLoader:', error);
+          isInitializing = false;
         }
       } else {
         console.warn('ChatBotUiLoader not available yet, retrying in 100ms...');
-        setTimeout(initChatbot, 100);
+        timeoutId = setTimeout(initChatbot, 100);
       }
     };
 
-    // Start initialization after a short delay to ensure script is loaded
-    const timeoutId = setTimeout(initChatbot, 500);
-    return () => clearTimeout(timeoutId);
-  }, [appMode]);
+    timeoutId = setTimeout(initChatbot, 500);
+    
+    return () => {
+      clearTimeout(timeoutId);
+      isInitializing = false;
+    };
+  }, [appMode]); // Only re-run if appMode changes
 
   const menuCategories = useMemo(() => organizeMenuByCategory(MenuItems), [MenuItems]);
   const total = useMemo(() => {
