@@ -35,337 +35,226 @@ const queryClient = new QueryClient({
   },
 });
 
-const stripePromise = loadStripe('pk_live_51LbmMgEqeptNz41bIEu1GF3KnNZdo1bJQ1yQ4ClMOLbfHbUj56bJZcPvUTKyWLL5il9qLWHHXu1mFjeSKmAXeHGI00DZsghsLM');
+const stripePromise = loadStripe('pk_live_51LbmMgEqeptNz41b8FkXq1eH1xP8sKzP3b0d2a8CqDq7D0e8d3f6kX4f2h1c8w9c2f6j3b5e4a3s2d1f0g0hYt');
 
-function MenuApp() {
-  const { MenuItems, isError, isPending, error } = useMenu();
+function MomotaroApp() {
+  const { isLoading, error, categories } = useMenu();
+  const [activeCategory, setActiveCategory] = useState<string | null>(null);
   const [cart, setCart] = useState<CartItem[]>([]);
-  const [isCartOpen, setIsCartOpen] = useState(false);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [activeCategory, setActiveCategory] = useState('');
-  const [orderNote, setOrderNote] = useState('');
-  const [isCheckingOut, setIsCheckingOut] = useState(false);
-
-  const [isOptionsModalOpen, setIsOptionsModalOpen] = useState(false);
   const [selectedItem, setSelectedItem] = useState<MenuItem | null>(null);
-
+  const [orderNote, setOrderNote] = useState('');
+  
+  // --- STRIPE STATE ---
+  const [clientSecret, setClientSecret] = useState<string | null>(null);
   const [isCheckoutModalOpen, setIsCheckoutModalOpen] = useState(false);
 
-  const appMode = import.meta.env.VITE_APP_MODE || 'dine-in';
-  const tableId = import.meta.env.VITE_TABLE_ID;
-
-  // Use ref to track if chatbot has been initialized
-  const chatbotInitialized = React.useRef(false);
-  const iframeLoaderRef = React.useRef<any>(null);
-
+  // --- CHATBOT LOADER ---
   useEffect(() => {
-    // Prevent multiple initializations
-    if (chatbotInitialized.current) {
-      console.log('Chatbot already initialized, skipping...');
-      return;
-    }
+    // 1. Get the CloudFront URL from your config
+    const CLOUDFRONT_URL = "https://d2ibqiw1xziqq9.cloudfront.net";
 
-    let timeoutId: NodeJS.Timeout;
-
-    const initChatbot = () => {
-      if (!window.ChatBotUiLoader) {
-        console.warn('ChatBotUiLoader not available yet, retrying in 100ms...');
-        timeoutId = setTimeout(initChatbot, 100);
-        return;
-      }
-
-      console.log('✓ ChatBotUiLoader available, initializing...');
-      chatbotInitialized.current = true; // Mark as initialized
-
-      // Define the config inline instead of loading from file
-      const chatbotConfig = {
-        region: 'ca-central-1',
-        cognito: {
-          poolId: 'ca-central-1:ed7a2f13-8e6f-45b7-99e8-1fb658f2f207',
-          region: 'ca-central-1'
-        },
-        lex: {
-          v2BotId: 'S832QRVZP3',
-          v2BotAliasId: '6JNOFO6XPY',
-          v2BotLocaleId: 'en_US',
-          region: 'ca-central-1',
-          initialText: appMode === 'takeout' 
-            ? 'Take-out, This is being developed! Please do not use this bot'
-            : 'Dine-In, This is being developed! Please do not use this bot'
-        },
-        ui: {
-          parentOrigin: window.location.origin,
-          toolbarTitle: 'Momotaro',
-          toolbarLogo: '',
-          enableLogin: false,
-          closeOnFulfillment: true
-        },
-        iframe: {
-          iframeSrcPath: '/parent.html',
-          shouldLoadIframeMinimized: true
-        }
-      };
-      
-      const loaderOptions = {
-        baseUrl: 'https://d2ibqiw1xziqq9.cloudfront.net',
-        elementId: 'lex-web-ui',
-        iframeLoadTimeout: 20000,
-        configEventTimeout: 20000,
-        shouldLoadConfigFromJsonFile: false // CRITICAL: Don't try to load config from file
-      };
-
-      console.log('Initializing with config:', chatbotConfig);
-      console.log('Loader options:', loaderOptions);
-
-      try {
-        iframeLoaderRef.current = new window.ChatBotUiLoader.IframeLoader(loaderOptions);
-        
-        // Pass config directly to load() instead of using shouldLoadConfigFromJsonFile
-        iframeLoaderRef.current.load(chatbotConfig)
-          .then(() => {
-            console.log('✅ Chatbot loaded successfully!');
-            console.log('Iframe should now exist:', !!document.querySelector('#lex-web-ui iframe'));
-          })
-          .catch((error) => {
-            console.error('❌ Chatbot failed to load:', error);
-            console.error('Error details:', {
-              message: error.message,
-              stack: error.stack,
-              loaderOptions,
-              chatbotConfig
-            });
-          });
-      } catch (error) {
-        console.error('❌ Error creating IframeLoader:', error);
-        chatbotInitialized.current = false; // Reset on creation error
-      }
-    };
-
-    timeoutId = setTimeout(initChatbot, 500);
-    
-    return () => {
-      clearTimeout(timeoutId);
-    };
-  }, []); // Empty dependency array - only run once on mount
-
-  const menuCategories = useMemo(() => organizeMenuByCategory(MenuItems), [MenuItems]);
-  const total = useMemo(() => {
-    const subtotal = cart.reduce((sum, item) => sum + (item.finalPrice * item.quantity), 0);
-    return subtotal * 1.13; // 13% tax
-  }, [cart]);
-
-  React.useEffect(() => {
-    if (menuCategories.length > 0 && !activeCategory) {
-      setActiveCategory(menuCategories[0].id);
-    }
-  }, [menuCategories, activeCategory]);
-
-  const filteredCategories = useMemo(() => {
-    if (!searchTerm) return menuCategories;
-    return menuCategories.map(category => ({
-      ...category,
-      items: category.items.filter(item =>
-        (item.name || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
-        (item.description || '').toLowerCase().includes(searchTerm.toLowerCase())
-      )
-    })).filter(category => category.items.length > 0);
-  }, [searchTerm, menuCategories]);
-
-  const handleItemSelect = (item: MenuItem) => {
-    if (item.options && item.options.length > 0) {
-      setSelectedItem(item);
-      setIsOptionsModalOpen(true);
+    // 2. Decide which config file to use based on the host
+    let configFileName;
+    if (window.location.origin.includes("dine-in")) {
+      configFileName = "lex-web-ui-loader-config-dinein.json";
+    } else if (window.location.origin.includes("take-out")) {
+      configFileName = "lex-web-ui-loader-config-takeout.json";
     } else {
-      const simpleCartItem: CartItem = {
-        cartId: item.id,
-        menuItem: item,
-        selectedOptions: {},
-        quantity: 1,
-        finalPrice: item.Price,
-      };
-      addToCart(simpleCartItem);
+      console.warn("Chatbot: No matching config for this origin:", window.location.origin);
+      // Default for local development
+      configFileName = "lex-web-ui-loader-config-dinein.json"; 
     }
-  };
 
-  const addToCart = (itemToAdd: CartItem) => {
-    setCart(prevCart => {
-      const existingItem = prevCart.find(cartItem => cartItem.cartId === itemToAdd.cartId);
-      if (existingItem) {
-        return prevCart.map(cartItem =>
-          cartItem.cartId === itemToAdd.cartId
-            ? { ...cartItem, quantity: cartItem.quantity + 1 }
-            : cartItem
-        );
-      }
-      return [...prevCart, { ...itemToAdd, quantity: 1 }];
-    });
-  };
+    // 3. Create the script tag to load the loader
+    const script = document.createElement('script');
+    script.src = `${CLOUDFRONT_URL}/lex-web-ui-loader.js`;
+    script.async = true;
 
-  const updateQuantity = (cartId: string, quantity: number) => {
-    if (quantity <= 0) {
-      removeFromCart(cartId);
-      return;
-    }
-    setCart(prevCart =>
-      prevCart.map(item =>
-        item.cartId === cartId ? { ...item, quantity } : item
-      )
-    );
-  };
-
-  const removeFromCart = (cartId: string) => {
-    setCart(prevCart => prevCart.filter(item => item.cartId !== cartId));
-  };
-
-  const scrollToCategory = (categoryId: string) => {
-    setActiveCategory(categoryId);
-    document.getElementById(categoryId)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-  };
-
-  const handleCheckout = async () => {
-    setIsCheckingOut(true);
-    if (appMode === 'takeout') {
-      setIsCheckoutModalOpen(true);
-    } else {
-      try {
-        const apiKey = import.meta.env.VITE_API_KEY;
-        const TableTapUrl = import.meta.env.VITE_TABLE_TAP_URL;
-        const headers = { 'Content-Type': 'application/json', 'x-api-key': apiKey };
-
-        const orderData = {
-          items: cart.map(item => ({
-            id: item.menuItem.id,
-            name: item.menuItem.name,
-            price: item.finalPrice,
-            quantity: item.quantity,
-            subtotal: item.finalPrice * item.quantity,
-            location: item.menuItem.location,
-            options: Object.entries(item.selectedOptions).map(([group, option]) =>
-              `${group}: ${option.name}`
-            ).join('; ')
-          })),
-          total,
-          orderDate: new Date().toISOString(),
-          order_id: nanoid(5).toUpperCase(),
-          notes: orderNote || '',
-          table: tableId,
-          orderType: appMode,
+    // 4. When the script loads, initialize the chatbot
+    script.onload = () => {
+      if (window.ChatBotUiLoader) {
+        // These options tell the loader where to find files
+        const loaderOptions = {
+          baseUrl: CLOUDFRONT_URL,
+          configUrl: `${CLOUDFRONT_URL}/${configFileName}`
         };
 
-        await axios.post(TableTapUrl, orderData, { headers });
+        const iframeLoader = new window.ChatBotUiLoader.IframeLoader(loaderOptions);
 
-        setCart([]);
-        setIsCartOpen(false);
-        setOrderNote('');
-        alert('Order sent to the kitchen!');
-      } catch (error) {
-        console.error('Checkout failed:', error);
-        alert('Failed to send order. Please show your cart to the staff.');
+        // This config object can override settings from the JSON files.
+        // We set origins here for security.
+        const chatbotUiConfig = {
+          ui: {
+            parentOrigin: window.location.origin
+          },
+          iframe: {
+            iframeOrigin: CLOUDFRONT_URL
+            // The iframeSrcPath will be loaded from your JSON config
+          }
+        };
+
+        // 5. Load the iframe
+        iframeLoader.load(chatbotUiConfig)
+          .then(() => console.log('Chatbot UI loaded successfully.'))
+          .catch((err) => console.error('Chatbot UI failed to load:', err));
       }
+    };
+
+    // 6. Add the script to the page and add a cleanup function
+    document.body.appendChild(script);
+
+    return () => {
+      // Clean up the script when the component unmounts
+      document.body.removeChild(script);
+    };
+  }, []); // The empty array ensures this runs only once
+  // --- END CHATBOT LOADER ---
+
+  useEffect(() => {
+    if (categories.length > 0) {
+      setActiveCategory(categories[0].name);
     }
-    setIsCheckingOut(false);
+  }, [categories]);
+
+  const handleScrollToCategory = (categoryName: string) => {
+    setActiveCategory(categoryName);
+    const element = document.getElementById(categoryName);
+    if (element) {
+      const headerOffset = 64; // 4rem * 16px/rem = 64px
+      const elementPosition = element.getBoundingClientRect().top;
+      const offsetPosition = elementPosition + window.pageYOffset - headerOffset;
+
+      window.scrollTo({
+        top: offsetPosition,
+        behavior: 'smooth'
+      });
+    }
   };
 
-  const appearanceOptions = {
-    theme: 'night',
-    variables: {
-      colorPrimary: '#0ea5e9',
-      colorBackground: '#1e2b3b',
-      colorText: '#f8fafc',
-      colorDanger: '#ef4444',
-      fontFamily: 'Inter, sans-serif',
-      borderRadius: '0.5rem',
-    },
-     rules: {
-      '.Input': {
-        backgroundColor: '#334155',
-        borderColor: '#475569'
-      },
-       '.Tab': {
-        backgroundColor: '#334155',
-         borderColor: '#475569'
-      },
-      '.Tab:hover': {
-        backgroundColor: '#475569',
-      },
-      '.Tab--selected': {
-        backgroundColor: '#0ea5e9',
-        color: '#ffffff',
-      },
+  const total = useMemo(() => {
+    return cart.reduce((acc, item) => acc + item.price * item.quantity, 0);
+  }, [cart]);
+
+  // --- STRIPE: Create PaymentIntent when cart changes ---
+  useEffect(() => {
+    if (total > 0) {
+      // Create a PaymentIntent as soon as the cart has items
+      axios.post('/.netlify/functions/create-payment-intent', {
+        amount: Math.round(total * 100), // Convert to cents
+        cart: cart.map(item => ({ id: item.id, name: item.name, quantity: item.quantity, price: item.price }))
+      })
+      .then(res => {
+        setClientSecret(res.data.clientSecret);
+      })
+      .catch(error => {
+        console.error("Error creating PaymentIntent:", error);
+      });
+    } else {
+      setClientSecret(null);
+    }
+  }, [total, cart]); // Re-run when total or cart changes
+
+  const handleOpenCheckout = () => {
+    if (clientSecret) {
+      setIsCheckoutModalOpen(true);
+    } else {
+      console.error("Checkout cannot be opened: No client secret");
+      // Optionally show an error to the user
     }
   };
 
   const stripeOptions: StripeElementsOptions = {
-    mode: 'payment',
-    amount: Math.round(total * 100),
-    currency: 'cad',
-    appearance: appearanceOptions,
+    clientSecret,
+    appearance: {
+      theme: 'night',
+      labels: 'floating',
+      variables: {
+        colorPrimary: '#10b981', // emerald-500
+        colorBackground: '#1e293b', // slate-800
+        colorText: '#f1f5f9', // slate-100
+        colorDanger: '#f43f5e', // rose-500
+        fontFamily: 'Inter, system-ui, sans-serif',
+        spacingUnit: '4px',
+        borderRadius: '4px',
+      }
+    },
   };
-
-  if (window.location.pathname === '/completion') {
+  
+  if (clientSecret && window.location.search.includes('payment_intent')) {
     return (
-      <Elements stripe={stripePromise} options={{}}>
-        <Completion />
-      </Elements>
+      <div className="min-h-screen bg-slate-900 text-slate-100">
+        <Elements stripe={stripePromise} options={stripeOptions}>
+          <Completion clientSecret={clientSecret} />
+        </Elements>
+      </div>
     );
   }
 
-  if (isPending) return <div className="min-h-screen bg-slate-900"><LoadingSpinner /></div>;
-  if (isError) return <div className="min-h-screen bg-slate-900"><ErrorMessage error={error} /></div>;
-
   return (
-    <div className="min-h-screen bg-slate-900 text-slate-300 antialiased">
-      <Header cart={cart} onCartClick={() => setIsCartOpen(true)} />
+    <div className="flex h-screen bg-slate-900 text-slate-100">
+      <Sidebar
+        categories={categories}
+        activeCategory={activeCategory}
+        onSelectCategory={handleScrollToCategory}
+      />
+      <main className="flex-1 overflow-y-auto scroll-smooth" onScroll={() => {
+        // Find the category that is most visible
+        let currentCategory = categories[0]?.name;
+        let minDistance = Infinity;
 
-      <main className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
-        {appMode === 'dine-in' && (
-          <h1 className="text-3xl font-bold tracking-tight text-slate-100 mb-8 animate-slide-in-fade">
-            Welcome to Table {tableId?.replace('table-', '')}
-          </h1>
-        )}
-        <div className="lg:grid lg:grid-cols-12 lg:gap-12">
-          <Sidebar
-            categories={menuCategories}
-            searchTerm={searchTerm}
-            onSearchChange={setSearchTerm}
-            activeCategory={activeCategory}
-            onCategoryClick={scrollToCategory}
-          />
-          <div className="lg:col-span-9 mt-8 lg:mt-0">
+        categories.forEach(category => {
+          const element = document.getElementById(category.name);
+          if (element) {
+            const distance = Math.abs(element.getBoundingClientRect().top - 64);
+            if (distance < minDistance) {
+              minDistance = distance;
+              currentCategory = category.name;
+            }
+          }
+        });
+        setActiveCategory(currentCategory);
+      }}>
+        <Header />
+        <div className="container mx-auto px-4 py-8 max-w-3xl">
+          {isLoading && <LoadingSpinner />}
+          {error && <ErrorMessage message={error} />}
+          {!isLoading && !error && (
             <div className="space-y-12">
-              {filteredCategories.map((category, index) => (
+              {categories.map((category) => (
                 <MenuSection
-                  key={category.id}
+                  key={category.name}
                   category={category}
-                  onItemSelect={handleItemSelect}
-                  delay={(index + 2) * 100}
+                  onItemClick={setSelectedItem}
                 />
               ))}
             </div>
-          </div>
+          )}
         </div>
       </main>
-
       <Cart
-        isOpen={isCartOpen}
-        onClose={() => setIsCartOpen(false)}
         cart={cart}
-        onUpdateQuantity={updateQuantity}
-        onRemoveItem={removeFromCart}
-        onCheckout={handleCheckout}
-        isCheckingOut={isCheckingOut}
+        setCart={setCart}
+        total={total}
         orderNote={orderNote}
-        onNoteChange={setOrderNote}
-        checkoutButtonText={appMode === 'takeout' ? 'Proceed to Payment' : 'Send to Kitchen'}
+        setOrderNote={setOrderNote}
+        onCheckout={handleOpenCheckout}
+        canCheckout={!!clientSecret && total > 0}
       />
 
-      <ItemOptionsModal
-        isOpen={isOptionsModalOpen}
-        onClose={() => setIsOptionsModalOpen(false)}
-        item={selectedItem}
-        onAddToCart={addToCart}
-      />
-
+      {selectedItem && (
+        <ItemOptionsModal
+          item={selectedItem}
+          onClose={() => setSelectedItem(null)}
+          onAddToCart={(itemWithOptions) => {
+            setCart(prevCart => {
+              const uniqueId = nanoid();
+              return [...prevCart, { ...itemWithOptions, cartItemId: uniqueId }];
+            });
+            setSelectedItem(null);
+          }}
+        />
+      )}
+      
       {isCheckoutModalOpen && (
         <>
           <div className="fixed inset-0 bg-black/60 z-40" onClick={() => setIsCheckoutModalOpen(false)} />
@@ -391,7 +280,16 @@ function MenuApp() {
       )}
 
       <style jsx>{`
-        /* ... styles remain the same ... */
+        /* Hide scrollbar for Chrome, Safari and Opera */
+        main::-webkit-scrollbar {
+          display: none;
+        }
+
+        /* Hide scrollbar for IE, Edge and Firefox */
+        main {
+          -ms-overflow-style: none;  /* IE and Edge */
+          scrollbar-width: none;  /* Firefox */
+        }
       `}</style>
     </div>
   );
@@ -401,7 +299,7 @@ function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <MenuProvider>
-        <MenuApp />
+        <MomotaroApp />
       </MenuProvider>
     </QueryClientProvider>
   );
