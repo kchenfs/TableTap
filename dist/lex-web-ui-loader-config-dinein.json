@@ -19,7 +19,7 @@
     "closeOnFulfillment": true
   },
   "iframe": {
-    "iframeSrcPath": "https://d2ibqiw1xziqq9.cloudfront.net/parent.html",
+    "iframeSrcPath": "/parent.html",
     "shouldLoadIframeMinimized": true
   },
   "loader": {
