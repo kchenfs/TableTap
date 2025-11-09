@@ -6,23 +6,18 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Restaurant Online Ordering Platform</title>
     
+    <!-- Load chatbot CSS from CloudFront -->
     <link href="https://d2ibqiw1xziqq9.cloudfront.net/lex-web-ui-loader.css" rel="stylesheet">
   </head>
   <body>
     <div id="root"></div>
     
+    <!-- Chatbot iframe container -->
     <div id="lex-web-ui" class="lex-web-ui-iframe"></div>
     
     <script type="module" src="/src/main.tsx"></script>
     
-    <script>
-      window.lexWebUiLoaderConfig = {
-        iframe: {
-          iframeSrcPath: "https://d2ibqiw1xziqq9.cloudfront.net/parent.html"
-        }
-      };
-    </script>
-    
+    <!-- Load chatbot JS from CloudFront - must be AFTER the div -->
     <script src="https://d2ibqiw1xziqq9.cloudfront.net/lex-web-ui-loader.js"></script>
   </body>
 </html>

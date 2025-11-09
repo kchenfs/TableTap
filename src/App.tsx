@@ -57,40 +57,47 @@ function MenuApp() {
   useEffect(() => {
     const initChatbot = () => {
       if (window.ChatBotUiLoader) {
-        console.log('Initializing chatbot from CloudFront...');
+        console.log('✓ ChatBotUiLoader available, initializing...');
 
         // Determine config file based on app mode
         const configFileName = appMode === 'takeout' 
           ? 'lex-web-ui-loader-config-takeout.json'
           : 'lex-web-ui-loader-config-dinein.json';
         
-        const configUrl = `https://d2ibqiw1xziqq9.cloudfront.net/${configFileName}`;
-
         const loaderOptions = {
           shouldLoadConfigFromJsonFile: true,
-          // FORCE CloudFront — NEVER use currentOrigin for assets
           baseUrl: 'https://d2ibqiw1xziqq9.cloudfront.net',
-          configUrl: configUrl
+          configUrl: `https://d2ibqiw1xziqq9.cloudfront.net/${configFileName}`,
+          elementId: 'lex-web-ui' // Explicitly set the container element ID
         };
 
-        console.log(`Loading config from: ${configUrl}`);
+        console.log(`Loading chatbot config from: ${loaderOptions.configUrl}`);
 
-        const iframeLoader = new window.ChatBotUiLoader.IframeLoader(loaderOptions);
-        
-        iframeLoader.load()
-          .then(() => {
-            console.log('✅ Chatbot loaded successfully from CloudFront!');
-          })
-          .catch((error) => {
-            console.error('❌ Chatbot failed to load:', error);
-          });
+        try {
+          const iframeLoader = new window.ChatBotUiLoader.IframeLoader(loaderOptions);
+          
+          iframeLoader.load()
+            .then(() => {
+              console.log('✅ Chatbot loaded successfully!');
+            })
+            .catch((error) => {
+              console.error('❌ Chatbot failed to load:', error);
+              console.error('Error details:', {
+                message: error.message,
+                stack: error.stack,
+                loaderOptions
+              });
+            });
+        } catch (error) {
+          console.error('❌ Error creating IframeLoader:', error);
+        }
       } else {
-        console.warn('ChatBotUiLoader not available yet, retrying...');
+        console.warn('ChatBotUiLoader not available yet, retrying in 100ms...');
         setTimeout(initChatbot, 100);
       }
     };
 
-    // Start trying after 500ms (scripts are already loaded)
+    // Start initialization after a short delay to ensure script is loaded
     const timeoutId = setTimeout(initChatbot, 500);
     return () => clearTimeout(timeoutId);
   }, [appMode]);
