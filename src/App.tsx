@@ -110,7 +110,8 @@ function MenuApp() {
         baseUrl: 'https://d2ibqiw1xziqq9.cloudfront.net',
         elementId: 'lex-web-ui',
         iframeLoadTimeout: 20000,
-        configEventTimeout: 20000
+        configEventTimeout: 20000,
+        shouldLoadConfigFromJsonFile: false // CRITICAL: Don't try to load config from file
       };
 
       console.log('Initializing with config:', chatbotConfig);
@@ -146,7 +147,7 @@ function MenuApp() {
       clearTimeout(timeoutId);
     };
   }, []); // Empty dependency array - only run once on mount
-  
+
   const menuCategories = useMemo(() => organizeMenuByCategory(MenuItems), [MenuItems]);
   const total = useMemo(() => {
     const subtotal = cart.reduce((sum, item) => sum + (item.finalPrice * item.quantity), 0);
