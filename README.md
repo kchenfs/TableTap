@@ -54,7 +54,7 @@ The infrastructure is composed of three main pillars:
 *   Axios (HTTP Requests)
 
 **Backend & Cloud:**
-*   Python 3.10 (AWS Lambda)
+*   Python 3.13 (AWS Lambda)
 *   AWS DynamoDB (NoSQL Database)
 *   AWS IoT Core (MQTT Messaging)
 *   AWS SES (Simple Email Service)
