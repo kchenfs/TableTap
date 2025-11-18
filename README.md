@@ -45,6 +45,95 @@ The infrastructure is composed of three main pillars:
 *   **Python Listener:** A script running on-premise listens to the subscription topic.
 *   **Thermal Printing:** Uses the `python-escpos` library to parse the JSON payload and print physical tickets for the chefs.
 
+
+🛠 Tech Stack
+Frontend:
+React + Vite
+Tailwind CSS
+Axios (HTTP Requests)
+Backend & Cloud:
+Python 3.10 (AWS Lambda)
+AWS DynamoDB (NoSQL Database)
+AWS IoT Core (MQTT Messaging)
+AWS SES (Simple Email Service)
+Stripe API (Payments & Webhooks)
+DevOps & Infrastructure:
+Docker & Docker Compose
+Nginx (Reverse Proxy)
+GitHub Actions (CI/CD)
+Linux Ubuntu Server
+⚙ Environment Configuration
+The Lambda function requires the following environment variables to operate:
+Variable	Description
+STRIPE_SECRET_KEY	Secret key for initializing Stripe API calls.
+STRIPE_WEBHOOK_SECRET	Used to verify that incoming webhooks are genuinely from Stripe.
+SENDER_EMAIL	The verified identity email in AWS SES used to send receipts.
+DYNAMODB_TABLE_NAME	The name of the DynamoDB table for order persistence.
+PRINTER_TOPIC	The MQTT topic string that the kitchen printer subscribes to.
+🔄 Workflow
+User Scan: User scans QR code -> PHP Container Redirect -> Nginx -> React Container.
+Order Submission: User builds cart and clicks "Order".
+Processing:
+If Dine-In: Payload sent directly to API Gateway.
+If Takeout: User pays via Stripe. Stripe Webhook triggers API Gateway.
+Lambda Logic:
+Saves order to DynamoDB.
+Publishes payload to AWS IoT Core.
+(Takeout Only) Generates HTML from emailtemplate.html and sends via SES.
+Fulfillment: Local Computer script detects MQTT message -> Prints Ticket on RP326 -> Kitchen prepares food.
+✨ Key Features
+Hybrid Ordering System: Seamlessly handles both "pay-later" Dine-In orders and "pay-now" Stripe Takeout orders in a single codebase.
+Real-Time Kitchen Bridge: Sub-second communication between the web app and the physical kitchen printer using AWS IoT MQTT.
+Server-Driven UI (Headless CMS): The frontend fetches menu items dynamically from DynamoDB. Restaurant staff can update prices, descriptions, or "Daily Specials" on the backend without redeploying the HTML/Frontend code.
+Automated Receipts: Generates dynamic HTML email receipts including itemized lists, tax calculations, and payment method badges (Apple Pay, Visa, Mastercard).
+Smart Station Routing: The system distinguishes between items prepared in the "front" (Sushi Bar) vs the "back" (Kitchen) based on item metadata.
+🖨️ Hardware & IoT Integration
+The bridge between the cloud and the physical kitchen is handled by a lightweight listener node.
+Printer: RP326 80mm Thermal Receipt Printer (Connected via USB/Network).
+Listener Node: A dedicated computer running a Python script that subscribes to the AWS IoT MQTT topic.
+Driver: Uses the python-escpos library to convert JSON payloads into ESC/POS printer commands.
+💾 Data Models (DynamoDB)
+The application uses DynamoDB to store Menu Items and Orders. The schema leverages DynamoDB JSON format to ensure strict typing (Strings vs Numbers).
+1. Menu Item Schema
+Used to render the frontend menu dynamically.
+code
+JSON
+{
+  "ItemNumber": { "N": "173" },
+  "ItemName": { "S": "Daily Special B" },
+  "Category": { "S": "Daily Special" },
+  "Description": { "S": "Spicy Tuna (6 pcs) and Spicy Salmon (6 pcs)" },
+  "Price": { "S": "14.95" },
+  "Location": { "S": "front" } 
+}
+2. Order Schema
+Used to persist transaction history and kitchen tickets. Note the nested items list.
+code
+JSON
+{
+  "orderId": { "S": "IYJ9Q" },
+  "tableId": { "S": "table-10" },
+  "orderType": { "S": "dine-in" },
+  "paymentStatus": { "S": "Dine-In" },
+  "total": { "N": "57.55" },
+  "items": {
+    "L": [
+      {
+        "M": {
+          "id": { "S": "17" },
+          "name": { "S": "Salmon Sushi Appetizer" },
+          "quantity": { "N": "1" },
+          "price": { "N": "8.99" },
+          "location": { "S": "front" }
+        }
+      }
+    ]
+  }
+}
+
+
+
+
 ### Architecture Diagram
 
 ```mermaid
@@ -65,4 +154,6 @@ graph TD
         Lambda -- MQTT --> IoT[AWS IoT Core]
         IoT --> Listener[Computer + Listener Script]
         Listener --> Printer[RP326 Thermal Printer]
-    end
+end
+```
+
