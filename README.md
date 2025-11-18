@@ -66,6 +66,27 @@ The infrastructure is composed of three main pillars:
 *   GitHub Actions (CI/CD)
 *   Linux Ubuntu Server
 
+```mermaid
+graph TD
+    User[User / QR Scan] --> PHP[PHP Container]
+    PHP --> Nginx[Nginx Proxy]
+    Nginx --> React[React Container Table 1..12]
+    React -- Axios/JSON --> APIG[API Gateway]
+    APIG --> Lambda[AWS Lambda]
+    
+    subgraph "Order Processing"
+        Lambda --> DDB[(DynamoDB)]
+        Lambda --> Stripe[Stripe API]
+        Lambda --> SES[AWS SES Email]
+    end
+    
+    subgraph "Kitchen IoT"
+        Lambda -- MQTT --> IoT[AWS IoT Core]
+        IoT --> Listener[Computer + Listener Script]
+        Listener --> Printer[RP326 Thermal Printer]
+    end
+```
+
 ## ⚙ Environment Configuration
 
 The Lambda function requires the following environment variables to operate:
