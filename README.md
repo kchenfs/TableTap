@@ -1,83 +1,68 @@
-# Restaurant Online Ordering Platform
+# TableTap
 
-A modern, responsive restaurant ordering platform built with React, TypeScript, and Tailwind CSS.
+![AWS](https://img.shields.io/badge/AWS-Serverless-orange) ![Docker](https://img.shields.io/badge/Docker-Containerized-blue) ![React](https://img.shields.io/badge/React-Vite-cyan) ![Python](https://img.shields.io/badge/Python-3.10-yellow)
 
-## Features
+> **TableTap** is a serverless, containerized QR code ordering system facilitating seamless dine-in and takeout experiences. It connects customers directly to the kitchen via real-time MQTT printing and handles secure payments via Stripe.
 
-- 🍱 Dynamic menu loading from API
-- 🛒 Full shopping cart functionality
-- 🔍 Real-time search across menu items
-- 📱 Responsive design for all devices
-- 🎨 Beautiful dark theme with smooth animations
-- 🐳 Docker containerization support
+## 📖 Table of Contents
+- [About the Project](#about-the-project)
+- [System Architecture](#system-architecture)
+- [Key Features](#key-features)
+- [Hardware & IoT Integration](#hardware--iot-integration)
+- [Data Models](#data-models-dynamodb)
+- [Tech Stack](#tech-stack)
+- [Environment Configuration](#environment-configuration)
+- [Workflow](#workflow)
 
-## Getting Started
+## 🧐 About the Project
 
-### Local Development
+TableTap modernizes the restaurant ordering flow by replacing physical menus with dynamic QR codes. The system eliminates the need for servers to take initial orders, allowing the kitchen to receive tickets instantly.
 
-```bash
-# Install dependencies
-npm install
+The system supports two distinct modes:
+1.  **Dine-In:** Customers scan a table-specific QR code, browse the menu, and send orders directly to the kitchen printer.
+2.  **Takeout:** Customers browse remotely, pay upfront via Stripe, and receive an automated email receipt upon successful transaction.
 
-# Start development server
-npm run dev
-```
+The application relies on a hybrid architecture using **AWS Serverless** components for backend logic and data, and **Docker** containers for frontend isolation and routing.
 
-### Docker Development
+## 🏗 System Architecture
 
-```bash
-# Run development environment
-docker-compose --profile dev up --build
+The infrastructure is composed of three main pillars:
 
-# Or run production build
-docker-compose up --build
-```
+### 1. The Frontend (Containerized)
+* **Dynamic QR Codes:** A PHP container handles the initial scan, directing users to the correct session URL.
+* **Nginx Reverse Proxy:** Routes traffic to the appropriate container.
+* **Per-Table Isolation:** The application runs ~12 separate Docker containers (one per table + takeout) to manage state and sessions independently.
+* **Updates:** GitHub Actions handles CI/CD, updating container images on the Linux Ubuntu server automatically on push.
 
-### Docker Commands
+### 2. The Backend (AWS Serverless)
+* **API Gateway & Lambda:** Receives cart payloads via Axios. The Lambda function (`lambda_function.py`) acts as the central controller.
+* **Stripe Integration:** Validates webhooks for takeout orders to ensure payment success before processing.
+* **Data Persistence:** **DynamoDB** stores all order details, customer info, and transaction timestamps.
+* **Notifications:** **AWS SES** sends formatted HTML email receipts to takeout customers using a custom template.
 
-```bash
-# Build production image
-docker build -t restaurant-app .
+### 3. The IoT Layer (Kitchen)
+* **AWS IoT Core (MQTT):** Lambda publishes approved orders to a secure MQTT topic.
+* **Python Listener:** A script running on-premise listens to the subscription topic.
+* **Thermal Printing:** Uses the `python-escpos` library to parse the JSON payload and print physical tickets for the chefs.
 
-# Run production container
-docker run -p 3000:80 restaurant-app
+### Architecture Diagram
 
-# Build development image
-docker build -f Dockerfile.dev -t restaurant-app-dev .
-
-# Run development container
-docker run -p 5173:5173 -v $(pwd):/app restaurant-app-dev
-```
-
-## API Integration
-
-The application fetches menu data from an API that communicates with a DynamoDB database.
-
-Expected API response format:
-```json
-{
-  "body": "[{\"ItemNumber\":\"1\",\"ItemName\":\"Gyoza\",\"ItemDescription\":\"Pan-fried dumplings\",\"Price\":8.00,\"Category\":\"Appetizer\"}]"
-}
-```
-
-## Project Structure
-
-```
-src/
-├── components/          # React components
-├── contexts/           # React contexts for state management
-├── utils/              # Utility functions
-├── types.ts           # TypeScript type definitions
-└── App.tsx            # Main application component
-```
-
-## Technologies Used
-
-- **React 18** - UI framework
-- **TypeScript** - Type safety
-- **Tailwind CSS** - Styling
-- **React Query** - Data fetching and caching
-- **Lucide React** - Icons
-- **Vite** - Build tool
-- **Docker** - Containerization
-- **Nginx** - Production web server
+```mermaid
+graph TD
+    User[User / QR Scan] --> PHP[PHP Container]
+    PHP --> Nginx[Nginx Proxy]
+    Nginx --> React[React Container Table 1..12]
+    React -- Axios/JSON --> APIG[API Gateway]
+    APIG --> Lambda[AWS Lambda]
+    
+    subgraph "Order Processing"
+        Lambda --> DDB[(DynamoDB)]
+        Lambda --> Stripe[Stripe API]
+        Lambda --> SES[AWS SES Email]
+    end
+    
+    subgraph "Kitchen IoT"
+        Lambda -- MQTT --> IoT[AWS IoT Core]
+        IoT --> Listener[Computer + Listener Script]
+        Listener --> Printer[RP326 Thermal Printer]
+    end
