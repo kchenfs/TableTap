@@ -104,6 +104,8 @@ function MomotaroApp() {
             baseUrl: CLOUDFRONT_URL,
             shouldLoadMinDeps: true,
             config: configJson // <--- Vital fix: Pass the object here
+            configUrl: null,
+            configPath: null
           };
 
           const iframeLoader = new window.ChatBotUiLoader.IframeLoader(loaderOptions);
