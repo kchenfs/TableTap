@@ -140,7 +140,7 @@ services:
     network_mode: "host" # Use host network to share Tailscale IP
     volumes:
       - /proc:/host/proc:ro
-      - /sys:/host/sys:ro
+      - /sys:/host/sys:roig
       - /:/rootfs:ro
     command:
       - '--path.procfs=/host/proc'

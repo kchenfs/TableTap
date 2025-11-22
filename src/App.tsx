@@ -106,7 +106,7 @@ function MomotaroApp() {
             iframeOrigin: CLOUDFRONT_URL,
             // --- Static values copied (and corrected) from your JSON ---
             // This is the correct path, not parent.html
-            iframeSrcPath: '${CLOUDFRONT_URL}/index.html#/?lexWebUiEmbed=true',
+            iframeSrcPath: `${CLOUDFRONT_URL}/index.html#/?lexWebUiEmbed=true`,
             shouldLoadIframeMinimized: true
           }
           // We don't override 'lex' or 'cognito', so the
