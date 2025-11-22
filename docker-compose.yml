@@ -3,7 +3,7 @@ version: '3.8' # Added for best practice
 services:
   # ... (all your table-1 to takeout services are perfect) ...
   table-1:
-    image: kencfs/tableai:table-1
+    image: kchencfs/tableai:table-1
     pull_policy: always
     expose:
       - "80"
@@ -11,7 +11,7 @@ services:
       - restaurant-network
   
   table-2:
-    image: kencfs/tableai:table-2
+    image: kchencfs/tableai:table-2
     pull_policy: always
     expose:
       - "80"
@@ -19,7 +19,7 @@ services:
       - restaurant-network
   
   table-3:
-    image: kencfs/tableai:table-3
+    image: kchencfs/tableai:table-3
     pull_policy: always
     expose:
       - "80"
@@ -27,7 +27,7 @@ services:
       - restaurant-network
 
   table-4:
-    image: kencfs/tableai:table-4
+    image: kchencfs/tableai:table-4
     pull_policy: always
     expose:
       - "80"
@@ -35,7 +35,7 @@ services:
       - restaurant-network
 
   table-5:
-    image: kencfs/tableai:table-5
+    image: kchencfs/tableai:table-5
     pull_policy: always
     expose:
       - "80"
@@ -43,7 +43,7 @@ services:
       - restaurant-network
 
   table-6:
-    image: kencfs/tableai:table-6
+    image: kchencfs/tableai:table-6
     pull_policy: always
     expose:
       - "80"
@@ -51,7 +51,7 @@ services:
       - restaurant-network
 
   table-7:
-    image: kencfs/tableai:table-7
+    image: kchencfs/tableai:table-7
     pull_policy: always
     expose:
       - "80"
@@ -59,7 +59,7 @@ services:
       - restaurant-network
 
   table-8:
-    image: kencfs/tableai:table-8
+    image: kchencfs/tableai:table-8
     pull_policy: always
     expose:
       - "80"
@@ -67,7 +67,7 @@ services:
       - restaurant-network
 
   table-9:
-    image: kencfs/tableai:table-9
+    image: kchencfs/tableai:table-9
     pull_policy: always
     expose:
       - "80"
@@ -75,7 +75,7 @@ services:
       - restaurant-network
 
   table-10:
-    image: kencfs/tableai:table-10
+    image: kchencfs/tableai:table-10
     pull_policy: always
     expose:
       - "80"
@@ -83,7 +83,7 @@ services:
       - restaurant-network
 
   table-11:
-    image: kencfs/tableai:table-11
+    image: kchencfs/tableai:table-11
     pull_policy: always
     expose:
       - "80"
@@ -91,7 +91,7 @@ services:
       - restaurant-network
 
   takeout:
-    image: kencfs/tableai:takeout
+    image: kchencfs/tableai:takeout
     pull_policy: always
     expose:
       - "80"
