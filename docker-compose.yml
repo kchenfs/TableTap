@@ -1,5 +1,7 @@
+version: '3.8' # Added for best practice
+
 services:
-  # Table instances for Dine-in
+  # ... (all your table-1 to takeout services are perfect) ...
   table-1:
     image: kencfs/tableai:table-1
     pull_policy: always
@@ -105,6 +107,7 @@ services:
       - ./nginx-load-balancer.conf:/etc/nginx/nginx.conf:ro
       - ./certbot/conf:/etc/letsencrypt
       - ./certbot/www:/var/www/certbot
+      - nginx-logs:/var/log/nginx  # <--- FIX 1: Make Nginx write to the shared volume
     restart: unless-stopped
     networks:
       - restaurant-network
@@ -117,6 +120,50 @@ services:
     command: sh -c "trap exit TERM; while :; do certbot renew; sleep 12h & wait $${!}; done;"
     networks:
       - restaurant-network
+
+  promtail:
+    image: grafana/promtail:latest
+    container_name: promtail
+    network_mode: "host" 
+    volumes:
+      - ./promtail-config.yml:/etc/promtail/config.yml
+      - /var/run/docker.sock:/var/run/docker.sock:ro 
+      - /var/lib/docker/containers:/var/lib/docker/containers:ro 
+      - nginx-logs:/var/log/nginx:ro 
+    command: -config.file=/etc/promtail/config.yml
+    restart: unless-stopped
+  
+  # --- ADD THIS SERVICE FOR SERVER METRICS ---
+  node-exporter:
+    image: prom/node-exporter:latest
+    container_name: node-exporter
+    network_mode: "host" # Use host network to share Tailscale IP
+    volumes:
+      - /proc:/host/proc:ro
+      - /sys:/host/sys:ro
+      - /:/rootfs:ro
+    command:
+      - '--path.procfs=/host/proc'
+      - '--path.sysfs=/host/sys'
+      - '--path.rootfs=/rootfs'
+      - '--web.listen-address=0.0.0.0:9100' # Listen on all interfaces
+    restart: unless-stopped
+
+  # --- ADD THIS SERVICE FOR DOCKER METRICS ---
+  cadvisor:
+    image: gcr.io/cadvisor/cadvisor:latest
+    container_name: cadvisor
+    network_mode: "host" # Use host network to share Tailscale IP
+    volumes:
+      - /:/rootfs:ro
+      - /var/run:/var/run:rw
+      - /sys:/sys:ro
+      - /var/lib/docker/:/var/lib/docker:ro
+    restart: unless-stopped
+
+# --- ADD THIS TOP-LEVEL SECTION TO DEFINE THE VOLUME ---
+volumes:
+  nginx-logs:
 
 networks:
   restaurant-network:

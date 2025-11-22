@@ -1,0 +1,43 @@
+server:
+  http_listen_port: 9080
+  grpc_listen_port: 0
+
+positions:
+  filename: /tmp/positions.yaml
+
+clients:
+  # CHANGE 1: Use the secure Tailscale HTTPS address for Loki.
+  - url: https://tabletap-monitor.taila459ef.ts.net/loki/api/v1/push
+    
+    # CHANGE 2: Add this. It tells Promtail to trust the
+    # private certificate provided by Tailscale.
+    tls_config:
+      insecure_skip_verify: true
+
+scrape_configs:
+  # This job correctly scrapes all Docker container logs (stdout/stderr)
+  - job_name: docker
+    docker_sd_configs:
+      - host: unix:///var/run/docker.sock
+        refresh_interval: 5s
+    relabel_configs:
+      - source_labels: ['__meta_docker_container_name']
+        regex: '/(.*)'
+        target_label: 'container'
+      - source_labels: ['__meta_docker_container_log_stream']
+        target_label: 'stream'
+      - source_labels: ['__meta_docker_container_label_com_docker_compose_service']
+        target_label: 'service'
+
+  # CHANGE 3: Add this new job to scrape your NGINX log files.
+  # The "docker" job only gets stdout, but your nginx-proxy
+  # writes to a file. This job reads from that file.
+  - job_name: nginx
+    static_configs:
+      - targets:
+          - localhost
+        labels:
+          job: nginx-proxy
+          service: nginx-proxy
+          # This path matches the volume mount in your Promtail container
+          __path__: /var/log/nginx/*.log
