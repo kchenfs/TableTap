@@ -1,0 +1,68 @@
+# .github/workflows/docker-build-push.yml
+
+name: Build and Push Docker Images
+
+on:
+  push:
+    branches:
+      - feature/take-stripe-integration
+  workflow_dispatch:
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write # Add this permission to allow writing to GHCR
+
+    strategy:
+      matrix:
+        service:
+          - { name: 'table-1', mode: 'dine-in' }
+          - { name: 'table-2', mode: 'dine-in' }
+          - { name: 'table-3', mode: 'dine-in' }
+          - { name: 'table-4', mode: 'dine-in' }
+          - { name: 'table-5', mode: 'dine-in' }
+          - { name: 'table-6', mode: 'dine-in' }
+          - { name: 'table-7', mode: 'dine-in' }
+          - { name: 'table-8', mode: 'dine-in' }
+          - { name: 'table-9', mode: 'dine-in' }
+          - { name: 'table-10', mode: 'dine-in' }
+          - { name: 'table-11', mode: 'dine-in' }
+          - { name: 'takeout', mode: 'takeout' }
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      # 1. UPDATED LOGIN STEP
+      - name: Log in to the GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.repository_owner }} # Your GitHub username or organization
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build and push Docker image for ${{ matrix.service.name }}
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ./Dockerfile
+          push: true
+          no-cache: true
+          # 2. UPDATED TAGS
+          tags: ghcr.io/${{ github.repository_owner }}/tableai:${{ matrix.service.name }}
+          build-args: |
+            VITE_APP_MODE=${{ matrix.service.mode }}
+            VITE_TABLE_ID=${{ matrix.service.name }}
+            VITE_API_URL_MENU=${{ secrets.VITE_API_URL_MENU }}
+            VITE_API_KEY=${{ secrets.VITE_API_KEY }}
+            VITE_TABLE_TAP_URL=${{ secrets.VITE_TABLE_TAP_URL }}
+            VITE_API_GATEWAY_URL=${{ secrets.VITE_API_GATEWAY_URL }}
+            VITE_COGNITO_POOL_ID=${{ secrets.VITE_COGNITO_POOL_ID }}
+            VITE_LEX_BOT_ID=${{ secrets.VITE_LEX_BOT_ID }}
+            VITE_LEX_BOT_ALIAS_ID=${{ secrets.VITE_LEX_BOT_ALIAS_ID }}
+            VITE_LEX_BOT_LOCALE_ID=${{ secrets.VITE_LEX_BOT_LOCALE_ID }}
