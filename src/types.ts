@@ -1,28 +1,30 @@
-// These new interfaces describe the options for a menu item
+// ---- OPTION TYPES ----
 export interface OptionItem {
   name: string;
-  priceModifier: number;
+  priceModifier: number; // Additional cost for this option
 }
 
 export interface OptionGroup {
   name: string;
-  type: 'VARIANT' | 'ADD_ON';
+  type: 'VARIANT' | 'ADD_ON'; // Variant = select one, Add-on = multiple allowed
   required: boolean;
   items: OptionItem[];
 }
 
-// MenuItem is updated to use a basePrice and an optional `options` array
+// ---- MENU ITEM ----
+// This represents an item used internally by the UI
 export interface MenuItem {
   id: string;
   name: string;
   description: string;
-  Price: number; 
-  category: string;
-  location: string;
-  options?: OptionGroup[]; // Added to hold customization data
+  Price: number;         // Base price from API
+  category: string;      // category slug (e.g. "special-roll")
+  location: string;      // dine-in vs take-out tagging
+  options: OptionGroup[]; // Always array (never undefined)
 }
 
-// Your API response type should now include an optional Options field
+// ---- RAW API RESPONSE ----
+// Matches your DynamoDB / Lambda shape
 export interface APIMenuItem {
   ItemNumber: string;
   ItemName: string;
@@ -30,22 +32,28 @@ export interface APIMenuItem {
   Price: number;
   Category: string;
   Location: string;
-  Options?: OptionGroup[];
+  Options?: OptionGroup[]; // Optional in API, normalized in transform step
 }
 
-// CartItem is now more detailed to hold the final state of a customized item
+// ---- CART ITEM ----
+// Represents a SPECIFIC configured item inside the user’s cart
 export interface CartItem {
-  cartId: string; // A unique ID for this specific entry in the cart
+  cartId: string; // unique per cart entry
   menuItem: MenuItem;
-  selectedOptions: Record<string, OptionItem>; // Stores the user's choices
+
+  // Stores selected options, grouped by option group name
+  // Example: { "Size": { name: "Large", priceModifier: 2.00 } }
+  selectedOptions: Record<string, OptionItem>;
+
   quantity: number;
-  finalPrice: number; // The basePrice + all selected priceModifiers
+
+  // finalPrice = base Price + sum(priceModifiers)
+  finalPrice: number;
 }
 
-// This interface remains unchanged
+// ---- CATEGORY USED BY UI ----
 export interface MenuCategory {
-  id: string;
-  name: string;
+  id: string;       // "special-roll"
+  name: string;     // "Special Roll"
   items: MenuItem[];
 }
-
