@@ -59,7 +59,7 @@ function MomotaroApp() {
     }
   }, [categories]);
 
-  // --- CHATBOT LOADER ---
+  // --- CHATBOT LOADER (FIXED) ---
   useEffect(() => {
     if (loaderScriptAdded) {
       return;
@@ -74,46 +74,64 @@ function MomotaroApp() {
       configFileName = "lex-web-ui-loader-config-takeout.json";
     } else {
       console.warn("Chatbot: No matching config for this origin:", window.location.origin);
-      configFileName = "lex-web-ui-loader-config-dinein.json"; // Default
+      configFileName = "lex-web-ui-loader-config-dinein.json"; // Default fallback
     }
 
     const script = document.createElement('script');
     script.src = `${CLOUDFRONT_URL}/lex-web-ui-loader.js`;
     script.async = true;
 
-    script.onload = () => {
+    script.onload = async () => {
       if (window.ChatBotUiLoader) {
-        console.log("✓ ChatBotUiLoader available, initializing...");
+        console.log("✓ ChatBotUiLoader available, fetching config manually...");
         
-        const loaderOptions = {
-          baseUrl: CLOUDFRONT_URL,
-          configUrl: `${CLOUDFRONT_URL}/${configFileName}`,
-          shouldLoadMinDeps: true
-        };
-
-        const iframeLoader = new window.ChatBotUiLoader.IframeLoader(loaderOptions);
-
-        const chatbotUiConfigOverrides = {
-          ui: {
-            parentOrigin: window.location.origin,
-            toolbarTitle: "Momotaro",
-            toolbarLogo: "",
-            enableLogin: false,
-            closeOnFulfillment: true,
-            baseUrl: CLOUDFRONT_URL
-          },
-          iframe: {
-            iframeOrigin: CLOUDFRONT_URL,
-            // *** FIXED QUOTES HERE ***
-            iframeSrcPath: `/index.html#/?lexWebUiEmbed=true`,
-            shouldLoadIframeMinimized: true
-          }
-        };
-
-        iframeLoader.load(chatbotUiConfigOverrides)
-          .then(() => console.log('✅ Chatbot UI loaded successfully.'))
-          .catch((err: any) => console.error('❌ Chatbot UI failed to load:', err));
+        try {
+          // 1. Manually fetch the correct config file first
+          // This ensures we get the specific file we want (dine-in or take-out)
+          // instead of the loader trying to guess and failing with 403.
+          const configUrl = `${CLOUDFRONT_URL}/${configFileName}`;
+          const response = await fetch(configUrl);
           
+          if (!response.ok) {
+            throw new Error(`Failed to load config from ${configUrl}: ${response.status} ${response.statusText}`);
+          }
+          
+          const configJson = await response.json();
+          console.log("✓ Config loaded manually:", configFileName);
+
+          // 2. Pass the fetched 'config' object directly to loaderOptions
+          const loaderOptions = {
+            baseUrl: CLOUDFRONT_URL,
+            shouldLoadMinDeps: true,
+            config: configJson // <--- Vital fix: Pass the object here
+          };
+
+          const iframeLoader = new window.ChatBotUiLoader.IframeLoader(loaderOptions);
+
+          const chatbotUiConfigOverrides = {
+            ui: {
+              parentOrigin: window.location.origin,
+              toolbarTitle: "Momotaro",
+              toolbarLogo: "",
+              enableLogin: false,
+              closeOnFulfillment: true,
+              baseUrl: CLOUDFRONT_URL
+            },
+            iframe: {
+              iframeOrigin: CLOUDFRONT_URL,
+              iframeSrcPath: `/index.html#/?lexWebUiEmbed=true`,
+              shouldLoadIframeMinimized: true
+            }
+          };
+
+          iframeLoader.load(chatbotUiConfigOverrides)
+            .then(() => console.log('✅ Chatbot UI loaded successfully.'))
+            .catch((err: any) => console.error('❌ Chatbot UI failed to load:', err));
+
+        } catch (error) {
+          console.error("❌ Error initializing chatbot:", error);
+        }
+
       } else {
         console.error("❌ ChatBotUiLoader object not found on window.");
       }
