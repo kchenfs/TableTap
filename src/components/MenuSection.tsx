@@ -9,6 +9,12 @@ interface MenuSectionProps {
 }
 
 export default function MenuSection({ category, onItemSelect, delay }: MenuSectionProps) {
+  // Add safety check - if category or items is undefined, return null
+  if (!category || !category.items) {
+    console.warn('MenuSection: category or items is undefined', category);
+    return null;
+  }
+
   return (
     <section 
       id={category.id} 
@@ -19,7 +25,7 @@ export default function MenuSection({ category, onItemSelect, delay }: MenuSecti
         {category.name}
       </h2>
       <div className="mt-6 divide-y divide-slate-800">
-        {category.items.map((item) => (
+        {(category.items || []).map((item) => (
           <MenuItem 
             key={item.id} 
             item={item} 
@@ -30,4 +36,3 @@ export default function MenuSection({ category, onItemSelect, delay }: MenuSecti
     </section>
   );
 }
-
