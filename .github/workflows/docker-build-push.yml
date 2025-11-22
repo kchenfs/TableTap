@@ -5,7 +5,7 @@ name: Build and Push Docker Images
 on:
   push:
     branches:
-      - feature/take-stripe-integration
+      - main
   workflow_dispatch:
 
 jobs:
