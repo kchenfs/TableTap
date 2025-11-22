@@ -103,7 +103,7 @@ function MomotaroApp() {
           const loaderOptions = {
             baseUrl: CLOUDFRONT_URL,
             shouldLoadMinDeps: true,
-            config: configJson // <--- Vital fix: Pass the object here
+            config: configJson, // <--- Vital fix: Pass the object here
             configUrl: null,
             configPath: null
           };
