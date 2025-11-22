@@ -51,6 +51,17 @@ function MomotaroApp() {
   const [clientSecret, setClientSecret] = useState<string | null>(null);
   const [isCheckoutModalOpen, setIsCheckoutModalOpen] = useState(false);
 
+  // --- DEBUG LOGGING ---
+  useEffect(() => {
+    console.log('Categories data:', categories);
+    console.log('Categories length:', categories?.length);
+    console.log('Is Loading:', isLoading);
+    console.log('Error:', error);
+    if (categories?.length > 0) {
+      console.log('First category:', categories[0]);
+    }
+  }, [categories, isLoading, error]);
+
   // --- CHATBOT LOADER ---
   useEffect(() => {
     
@@ -86,10 +97,6 @@ function MomotaroApp() {
 
         const iframeLoader = new window.ChatBotUiLoader.IframeLoader(loaderOptions);
 
-        // *** THIS IS THE FIX ***
-        // We must build the *complete* objects for `ui` and `iframe`
-        // because the loader does a shallow merge, replacing the
-        // keys, not merging them.
         const chatbotUiConfigOverrides = {
           ui: {
             // --- The dynamic value ---
@@ -131,9 +138,6 @@ function MomotaroApp() {
 
     return () => {
       // Cleanup logic if needed, but the flag should prevent re-run
-      // If you navigate away from the component, you might want:
-      // document.body.removeChild(script);
-      // loaderScriptAdded = false;
     };
   }, []); // Empty array ensures this runs only once
   // --- END CHATBOT LOADER ---
@@ -246,13 +250,19 @@ function MomotaroApp() {
           {error && <ErrorMessage message={error} />}
           {!isLoading && !error && (
             <div className="space-y-12">
-              {categories.map((category) => (
-                <MenuSection
-                  key={category.name}
-                  category={category}
-                  onItemClick={setSelectedItem}
-                />
-              ))}
+              {categories && categories.length > 0 ? (
+                categories.map((category) => (
+                  <MenuSection
+                    key={category.name}
+                    category={category}
+                    onItemClick={setSelectedItem}
+                  />
+                ))
+              ) : (
+                <div className="text-slate-400 text-center py-8">
+                  No menu items available
+                </div>
+              )}
             </div>
           )}
         </div>
