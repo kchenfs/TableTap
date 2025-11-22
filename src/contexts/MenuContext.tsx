@@ -1,21 +1,16 @@
-// File: MenuContext.tsx
-
-import React, { createContext, useContext } from 'react';
+import React, { createContext, useContext, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { APIMenuItem } from './types'; // Assuming your types file is here
+import { APIMenuItem, MenuCategory } from '../types'; 
+import { organizeMenuByCategory } from '../menuUtils'; // <--- 1. Import this
 
-// This is the corrected data fetching function
 const fetchMenu = async (): Promise<APIMenuItem[]> => {
-  // === THIS IS THE MODIFIED PART ===
   const apiUrl = import.meta.env.VITE_API_URL_MENU;
 
-  // Best practice: Add a check to ensure the variable is loaded.
   if (!apiUrl) {
-    throw new Error('VITE_API_URL_MENU is not defined. Please check your .env file.');
+    throw new Error('VITE_API_URL_MENU is not defined.');
   }
 
   const response = await fetch(apiUrl);
-  // ===============================
 
   if (!response.ok) {
     throw new Error('Network response was not ok');
@@ -25,9 +20,16 @@ const fetchMenu = async (): Promise<APIMenuItem[]> => {
   return data || [];
 };
 
-// --- No other changes are needed below this line ---
+// Define the shape of your context clearly
+interface MenuContextType {
+  isLoading: boolean;
+  error: unknown;
+  categories: MenuCategory[];
+  MenuItems: APIMenuItem[];
+  refetch: () => void;
+}
 
-const MenuContext = createContext<any>(null);
+const MenuContext = createContext<MenuContextType | null>(null);
 
 export const useMenu = () => {
   const context = useContext(MenuContext);
@@ -38,12 +40,25 @@ export const useMenu = () => {
 };
 
 export const MenuProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const { data, ...rest } = useQuery<APIMenuItem[]>({
+  const { data, isLoading, error, refetch } = useQuery<APIMenuItem[]>({
     queryKey: ['menuItems'],
     queryFn: fetchMenu,
   });
 
-  const value = { MenuItems: data ?? [], ...rest };
+  // 2. Calculate categories using your utility function
+  const categories = useMemo(() => {
+    if (!data) return [];
+    return organizeMenuByCategory(data);
+  }, [data]);
+
+  // 3. Include 'categories' in the value object
+  const value = { 
+    isLoading,
+    error,
+    categories, // <--- App.tsx looks for this!
+    MenuItems: data ?? [], 
+    refetch 
+  };
 
   return <MenuContext.Provider value={value}>{children}</MenuContext.Provider>;
 };
