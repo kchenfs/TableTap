@@ -8,8 +8,10 @@ import Cart from './components/Cart';
 import LoadingSpinner from './components/LoadingSpinner';
 import ErrorMessage from './components/ErrorMessage';
 import { MenuProvider, useMenu } from './contexts/MenuContext';
+import { organizeMenuByCategory } from './utils/menuUtils';
 import { CartItem, MenuItem } from './types';
 import ItemOptionsModal from './components/ItemOptionsModal';
+import { nanoid } from 'nanoid';
 import { X } from 'lucide-react';
 
 // --- STRIPE IMPORTS ---
@@ -41,10 +43,7 @@ let loaderScriptAdded = false;
 function MomotaroApp() {
   const { isLoading, error, categories } = useMenu();
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
-  
-  // --- CART STATE ---
   const [cart, setCart] = useState<CartItem[]>([]);
-  const [isCartOpen, setIsCartOpen] = useState(false);
   const [selectedItem, setSelectedItem] = useState<MenuItem | null>(null);
   const [orderNote, setOrderNote] = useState('');
   
@@ -54,13 +53,19 @@ function MomotaroApp() {
 
   // --- DEBUG LOGGING ---
   useEffect(() => {
+    console.log('Categories data:', categories);
+    console.log('Categories length:', categories?.length);
+    console.log('Is Loading:', isLoading);
+    console.log('Error:', error);
     if (categories?.length > 0) {
-      // console.log('Menu loaded, categories:', categories.length);
+      console.log('First category:', categories[0]);
     }
-  }, [categories]);
+  }, [categories, isLoading, error]);
 
   // --- CHATBOT LOADER ---
   useEffect(() => {
+    
+    // 1. Guard against React 18 Strict Mode double-effect
     if (loaderScriptAdded) {
       return;
     }
@@ -87,15 +92,16 @@ function MomotaroApp() {
         
         const loaderOptions = {
           baseUrl: CLOUDFRONT_URL,
-          configUrl: `${CLOUDFRONT_URL}/${configFileName}`,
-          shouldLoadMinDeps: true
+          configUrl: `${CLOUDFRONT_URL}/${configFileName}`
         };
 
         const iframeLoader = new window.ChatBotUiLoader.IframeLoader(loaderOptions);
 
         const chatbotUiConfigOverrides = {
           ui: {
+            // --- The dynamic value ---
             parentOrigin: window.location.origin,
+            // --- Static values copied from your JSON ---
             toolbarTitle: "Momotaro",
             toolbarLogo: "",
             enableLogin: false,
@@ -103,16 +109,20 @@ function MomotaroApp() {
             baseUrl: CLOUDFRONT_URL
           },
           iframe: {
+            // --- The dynamic value ---
             iframeOrigin: CLOUDFRONT_URL,
-            // *** FIXED QUOTES HERE ***
+            // --- Static values copied (and corrected) from your JSON ---
+            // This is the correct path, not parent.html
             iframeSrcPath: `${CLOUDFRONT_URL}/index.html#/?lexWebUiEmbed=true`,
             shouldLoadIframeMinimized: true
           }
+          // We don't override 'lex' or 'cognito', so the
+          // ones from the JSON file will be used.
         };
 
         iframeLoader.load(chatbotUiConfigOverrides)
           .then(() => console.log('✅ Chatbot UI loaded successfully.'))
-          .catch((err: any) => console.error('❌ Chatbot UI failed to load:', err));
+          .catch((err) => console.error('❌ Chatbot UI failed to load:', err));
           
       } else {
         console.error("❌ ChatBotUiLoader object not found on window.");
@@ -124,15 +134,17 @@ function MomotaroApp() {
     };
 
     document.body.appendChild(script);
-    loaderScriptAdded = true;
+    loaderScriptAdded = true; // Set the flag
 
-  }, []);
+    return () => {
+      // Cleanup logic if needed, but the flag should prevent re-run
+    };
+  }, []); // Empty array ensures this runs only once
   // --- END CHATBOT LOADER ---
 
 
-  // Set initial active category
   useEffect(() => {
-    if (categories && categories.length > 0 && !activeCategory) {
+    if (categories.length > 0 && !activeCategory) {
       setActiveCategory(categories[0].name);
     }
   }, [categories, activeCategory]);
@@ -152,26 +164,8 @@ function MomotaroApp() {
     }
   };
 
-  // --- CART HANDLERS ---
-  const handleAddToCart = (itemWithOptions: CartItem) => {
-    setCart(prevCart => [...prevCart, itemWithOptions]);
-    setSelectedItem(null);
-    setIsCartOpen(true); // Open cart when item is added
-  };
-
-  const handleUpdateQuantity = (cartId: string, quantity: number) => {
-    if (quantity < 1) return;
-    setCart(prev => prev.map(item => 
-      item.cartId === cartId ? { ...item, quantity } : item
-    ));
-  };
-
-  const handleRemoveItem = (cartId: string) => {
-    setCart(prev => prev.filter(item => item.cartId !== cartId));
-  };
-
   const total = useMemo(() => {
-    return (cart || []).reduce((acc, item) => acc + item.finalPrice * item.quantity, 0);
+    return (cart || []).reduce((acc, item) => acc + item.price * item.quantity, 0);
   }, [cart]);
 
   // --- STRIPE: Create PaymentIntent when cart changes ---
@@ -179,12 +173,7 @@ function MomotaroApp() {
     if (total > 0) {
       axios.post('/.netlify/functions/create-payment-intent', {
         amount: Math.round(total * 100), // Convert to cents
-        cart: cart.map(item => ({ 
-          id: item.menuItem.id, 
-          name: item.menuItem.name, 
-          quantity: item.quantity, 
-          price: item.finalPrice 
-        }))
+        cart: cart.map(item => ({ id: item.id, name: item.name, quantity: item.quantity, price: item.price }))
       })
       .then(res => {
         setClientSecret(res.data.clientSecret);
@@ -197,10 +186,9 @@ function MomotaroApp() {
     }
   }, [total, cart]);
 
-  const handleOpenCheckout = async () => {
+  const handleOpenCheckout = () => {
     if (clientSecret) {
       setIsCheckoutModalOpen(true);
-      setIsCartOpen(false);
     } else {
       console.error("Checkout cannot be opened: No client secret");
     }
@@ -227,7 +215,7 @@ function MomotaroApp() {
     return (
       <div className="min-h-screen bg-slate-900 text-slate-100">
         <Elements stripe={stripePromise} options={stripeOptions}>
-          <Completion />
+          <Completion clientSecret={clientSecret} />
         </Elements>
       </div>
     );
@@ -236,15 +224,11 @@ function MomotaroApp() {
   return (
     <div className="flex h-screen bg-slate-900 text-slate-100">
       <Sidebar
-        categories={categories || []}
-        activeCategory={activeCategory || ''}
-        onCategoryClick={handleScrollToCategory}
-        searchTerm=""
-        onSearchChange={() => {}}
+        categories={categories}
+        activeCategory={activeCategory}
+        onSelectCategory={handleScrollToCategory}
       />
-      
       <main className="flex-1 overflow-y-auto scroll-smooth" onScroll={() => {
-        if (!categories) return;
         let currentCategory = activeCategory;
         let minDistance = Infinity;
 
@@ -258,25 +242,21 @@ function MomotaroApp() {
             }
           }
         });
-        if (currentCategory) setActiveCategory(currentCategory);
+        setActiveCategory(currentCategory);
       }}>
-        <Header 
-          cart={cart} 
-          onCartClick={() => setIsCartOpen(true)} 
-        />
-        
+        <Header />
         <div className="container mx-auto px-4 py-8 max-w-3xl">
           {isLoading && <LoadingSpinner />}
-          {error && <ErrorMessage error={error instanceof Error ? error : new Error('Unknown error')} />}
+          {error && <ErrorMessage message={error} />}
           {!isLoading && !error && (
             <div className="space-y-12">
               {categories && categories.length > 0 ? (
-                categories.map((category) => (
+                categories.map((category, index) => (
                   <MenuSection
                     key={category.name}
                     category={category}
                     onItemSelect={setSelectedItem}
-                    delay={0}
+                    delay={index * 100}
                   />
                 ))
               ) : (
@@ -288,25 +268,27 @@ function MomotaroApp() {
           )}
         </div>
       </main>
-
       <Cart
-        isOpen={isCartOpen}
-        onClose={() => setIsCartOpen(false)}
         cart={cart}
-        onUpdateQuantity={handleUpdateQuantity}
-        onRemoveItem={handleRemoveItem}
-        onCheckout={handleOpenCheckout}
+        setCart={setCart}
+        total={total}
         orderNote={orderNote}
-        onNoteChange={setOrderNote}
-        checkoutButtonText="Proceed to Checkout"
+        setOrderNote={setOrderNote}
+        onCheckout={handleOpenCheckout}
+        canCheckout={!!clientSecret && total > 0}
       />
 
       {selectedItem && (
         <ItemOptionsModal
-          isOpen={!!selectedItem}
           item={selectedItem}
           onClose={() => setSelectedItem(null)}
-          onAddToCart={handleAddToCart}
+          onAddToCart={(itemWithOptions) => {
+            setCart(prevCart => {
+              const uniqueId = nanoid();
+              return [...prevCart, { ...itemWithOptions, cartItemId: uniqueId }];
+            });
+            setSelectedItem(null);
+          }}
         />
       )}
       
@@ -325,19 +307,16 @@ function MomotaroApp() {
                 </button>
               </div>
               <div className="flex-grow overflow-y-auto">
-                {/* Safely render Elements only if clientSecret exists */}
-                {clientSecret && (
-                  <Elements stripe={stripePromise} options={stripeOptions}>
-                    <CheckoutForm cart={cart} total={total} orderNote={orderNote}/>
-                  </Elements>
-                )}
+                <Elements stripe={stripePromise} options={stripeOptions}>
+                  <CheckoutForm cart={cart} total={total} orderNote={orderNote}/>
+                </Elements>
               </div>
             </div>
           </div>
         </>
       )}
 
-      <style>{`
+      <style jsx>{`
         /* Hide scrollbar for Chrome, Safari and Opera */
         main::-webkit-scrollbar {
           display: none;
