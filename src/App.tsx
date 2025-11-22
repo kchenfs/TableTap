@@ -98,7 +98,7 @@ function MomotaroApp() {
             toolbarTitle: "Momotaro",
             toolbarLogo: "",
             enableLogin: false,
-            closeOnFulfillment: true
+            closeOnFulfillment: true,
             baseUrl: CLOUDFRONT_URL
           },
           iframe: {
