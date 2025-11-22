@@ -16,11 +16,12 @@ export default function MenuItem({ item, onSelect }: MenuItemProps) {
       return false;
     }
     
-    return item.options.some(group => {
-      if (!group.items || !Array.isArray(group.items)) {
+    return (item.options || []).some(group => {
+      if (!group || !group.items || !Array.isArray(group.items)) {
         return false;
       }
-      return group.items.some(option => {
+      return (group.items || []).some(option => {
+        if (!option) return false;
         const modifier = typeof option.priceModifier === 'number' ? option.priceModifier : 0;
         return modifier !== 0;
       });
@@ -30,12 +31,12 @@ export default function MenuItem({ item, onSelect }: MenuItemProps) {
   return (
     <div className="py-5 flex items-center justify-between">
       <div className="space-y-1 flex-1 pr-4">
-        <h3 className="text-base font-medium text-slate-200">{item.name}</h3>
-        <p className="text-sm text-slate-400">{item.description}</p>
+        <h3 className="text-base font-medium text-slate-200">{item.name || 'Unnamed Item'}</h3>
+        <p className="text-sm text-slate-400">{item.description || ''}</p>
       </div>
       <div className="flex items-center gap-4">
         <p className="text-base font-semibold text-slate-50 w-20 text-right">
-          ${Number(item.Price).toFixed(2)}{hasPriceAffectingOptions ? '+' : ''}
+          ${Number(item.Price || 0).toFixed(2)}{hasPriceAffectingOptions ? '+' : ''}
         </p>
         <button 
           onClick={() => onSelect(item)}

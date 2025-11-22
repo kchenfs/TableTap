@@ -165,7 +165,7 @@ function MomotaroApp() {
   };
 
   const total = useMemo(() => {
-    return cart.reduce((acc, item) => acc + item.price * item.quantity, 0);
+    return (cart || []).reduce((acc, item) => acc + item.price * item.quantity, 0);
   }, [cart]);
 
   // --- STRIPE: Create PaymentIntent when cart changes ---
