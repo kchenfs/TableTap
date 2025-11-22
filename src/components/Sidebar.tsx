@@ -4,13 +4,23 @@ import { MenuCategory } from '../types';
 
 interface SidebarProps {
   categories: MenuCategory[];
-  searchTerm: string;
-  onSearchChange: (term: string) => void;
-  activeCategory: string;
+  searchTerm?: string; // Made optional to prevent errors if missing
+  onSearchChange?: (term: string) => void;
+  activeCategory: string | null; // Allow null
   onCategoryClick: (categoryId: string) => void;
 }
 
-export default function Sidebar({ categories, searchTerm, onSearchChange, activeCategory, onCategoryClick }: SidebarProps) {
+export default function Sidebar({ 
+  categories = [], // <--- DEFAULT VALUE prevents 'map' undefined error
+  searchTerm = '', 
+  onSearchChange = () => {}, 
+  activeCategory, 
+  onCategoryClick 
+}: SidebarProps) {
+  
+  // Safety check: ensure categories is actually an array
+  const safeCategories = Array.isArray(categories) ? categories : [];
+
   return (
     <aside className="lg:col-span-3 lg:sticky lg:top-24 h-fit animate-slide-in-fade" style={{ '--delay': '100ms' } as any}>
       {/* Search Bar */}
@@ -31,7 +41,8 @@ export default function Sidebar({ categories, searchTerm, onSearchChange, active
       <div className="mb-8 lg:hidden">
         <div className="category-scrollbar -mx-4 sm:-mx-6 overflow-x-auto px-4 sm:px-6">
           <nav className="flex space-x-2 border-b border-slate-800 pb-4">
-            {categories.map((category) => (
+            {/* Use safeCategories here */}
+            {safeCategories.map((category) => (
               <button
                 key={category.id}
                 onClick={() => onCategoryClick(category.id)}
@@ -52,7 +63,8 @@ export default function Sidebar({ categories, searchTerm, onSearchChange, active
       <nav className="hidden lg:block">
         <h3 className="text-sm font-semibold text-slate-50 tracking-tight mb-3">Categories</h3>
         <ul className="space-y-1">
-          {categories.map((category) => (
+          {/* Use safeCategories here */}
+          {safeCategories.map((category) => (
             <li key={category.id}>
               <button
                 onClick={() => onCategoryClick(category.id)}

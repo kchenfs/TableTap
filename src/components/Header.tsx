@@ -7,8 +7,9 @@ interface HeaderProps {
   onCartClick: () => void;
 }
 
-export default function Header({ cart, onCartClick }: HeaderProps) {
-  const totalItems = cart.reduce((sum, item) => sum + item.quantity, 0);
+export default function Header({ cart = [], onCartClick }: HeaderProps) { // <--- Default to []
+  // Use optional chaining or fallback to empty array
+  const totalItems = (cart || []).reduce((sum, item) => sum + (item.quantity || 0), 0);
 
   return (
     <header className="sticky top-0 bg-slate-900/80 backdrop-blur-lg z-20 border-b border-slate-800">
