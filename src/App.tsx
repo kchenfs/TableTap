@@ -53,6 +53,7 @@ function MomotaroApp() {
 
   // --- CHATBOT LOADER ---
   useEffect(() => {
+    
     // 1. Guard against React 18 Strict Mode double-effect
     if (loaderScriptAdded) {
       return;
@@ -98,13 +99,14 @@ function MomotaroApp() {
             toolbarLogo: "",
             enableLogin: false,
             closeOnFulfillment: true
+            baseUrl: CLOUDFRONT_URL
           },
           iframe: {
             // --- The dynamic value ---
             iframeOrigin: CLOUDFRONT_URL,
             // --- Static values copied (and corrected) from your JSON ---
             // This is the correct path, not parent.html
-            iframeSrcPath: "/index.html#/?lexWebUiEmbed=true",
+            iframeSrcPath: '${CLOUDFRONT_URL}/index.html#/?lexWebUiEmbed=true',
             shouldLoadIframeMinimized: true
           }
           // We don't override 'lex' or 'cognito', so the
