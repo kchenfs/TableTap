@@ -34,12 +34,14 @@ const queryClient = new QueryClient({
   },
 });
 
-// ✅ STRIPE CONFIGURATION
-// Uses environment variable injected by Docker/GitHub Actions
+
 const STRIPE_KEY = import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY;
+
 if (!STRIPE_KEY) {
-  console.error("⚠️ Stripe Publishable Key is missing. Check your environment variables.");
+  console.error("⚠️ Stripe Publishable Key is missing. Check your Docker build args.");
 }
+
+// Pass the variable (or an empty string to prevent crash if missing)
 const stripePromise = loadStripe(STRIPE_KEY || '');
 
 let loaderScriptAdded = false;
@@ -64,12 +66,15 @@ function MomotaroApp() {
   const [clientSecret, setClientSecret] = useState<string | null>(null);
   const [isCheckoutModalOpen, setIsCheckoutModalOpen] = useState(false);
 
-  // --- CHATBOT LOADER (FIXED) ---
+  // --- CHATBOT LOADER ---
   useEffect(() => {
     if (loaderScriptAdded) return;
     const CLOUDFRONT_URL = "https://d2ibqiw1xziqq9.cloudfront.net";
     
+    // 1. Determine which config file to use based on the URL
     let configFileName = "lex-web-ui-loader-config-dinein.json";
+    
+    // Check if we are on the take-out domain OR in take-out mode
     if (window.location.origin.includes("take-out") || appMode === 'takeout') {
       configFileName = "lex-web-ui-loader-config-takeout.json";
     }
@@ -81,7 +86,7 @@ function MomotaroApp() {
     script.onload = async () => {
       if (!window.ChatBotUiLoader) return;
       try {
-        // 1. Fetch the correct configuration file manually
+        // 2. Manually fetch the correct config file
         const response = await fetch(`${CLOUDFRONT_URL}/${configFileName}`);
         if (!response.ok) throw new Error(`Failed to load config`);
         const configJson = await response.json();
@@ -89,36 +94,32 @@ function MomotaroApp() {
         const loaderOptions = {
           baseUrl: CLOUDFRONT_URL,
           shouldLoadMinDeps: true,
+          // ✅ CRITICAL FIX: This tells the library "I already have the config, don't look for the default file"
           shouldLoadConfigFromJsonFile: false, 
+          config: configJson
         };
 
         const iframeLoader = new window.ChatBotUiLoader.IframeLoader(loaderOptions);
-        
-        // 2. ✅ MERGE CONFIGURATION
-        // We must merge the fetched 'configJson' (which has Cognito Pool ID)
-        // with our local 'overrides' (which has UI settings).
-        const mergedConfig = {
-          ...configJson, 
+        const overrides = {
           ui: {
-            ...configJson.ui, 
             parentOrigin: window.location.origin,
             toolbarTitle: "Momotaro",
             enableLogin: false,
             closeOnFulfillment: true,
           },
           iframe: {
-            ...configJson.iframe, 
             iframeOrigin: CLOUDFRONT_URL,
             iframeSrcPath: `/index.html#/?lexWebUiEmbed=true`,
             shouldLoadIframeMinimized: true
+          },
+          cognito: {
+            poolId: configJson.cognito.poolId,
+            region: configJson.cognito.region,
+            providerName: "cognito-identity.amazonaws.com"
+
           }
         };
-
-        // 3. Load with the complete merged config
-        iframeLoader.load(mergedConfig)
-          .then(() => console.log("Chatbot loaded successfully"))
-          .catch((err: any) => console.error("Chatbot load error:", err));
-
+        iframeLoader.load(overrides).catch((err: any) => console.error("Chatbot load error:", err));
       } catch (err) {
         console.error("Chatbot config load error:", err);
       }
@@ -213,6 +214,7 @@ function MomotaroApp() {
           name: item.menuItem.name,
           quantity: item.quantity,
           price: item.finalPrice,
+          // ✅ FIX: Send selected options so backend can calculate add-on prices
           selectedOptions: item.selectedOptions 
         })),
       })
