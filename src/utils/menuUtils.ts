@@ -1,5 +1,30 @@
 import { MenuItem, MenuCategory } from './types';
 
+// --- CONFIGURATION: PREFERRED CATEGORY ORDER ---
+const CATEGORY_ORDER = [
+  "Daily Special", // API uses singular "Special" based on logs
+  "Appetizer",
+  "Soup & Salad",
+  "Special Roll",
+  "Maki",
+  "Vegetable Choice",
+  "Roll Set Combo",
+  "Sushi & Sashimi",
+  "Lover Boat",
+  "Maki Tray",
+  "Sushi & Maki Tray",
+  "Sushi, Sashimi & Maki Tray",
+  "Dessert",
+  "A La Carte",
+  "Bento Box",
+  "Don",
+  "Rice/Fried Rice",
+  "Yaki Udon",
+  "Noodle Soup",
+  "Drinks",
+  "Alcohol"
+];
+
 // Helper to safely get a property regardless of casing (PascalCase or camelCase)
 const getProp = (item: any, key: string) => {
   if (!item) return undefined;
@@ -46,14 +71,10 @@ export const transformAPIMenuItem = (apiItem: any): MenuItem => {
 export const organizeMenuByCategory = (apiResponse: any): MenuCategory[] => {
   let itemsToProcess = apiResponse;
 
-  // --- FIX: DETECT AND UNWRAP LAMBDA PROXY RESPONSE ---
-  
-  // 1. Check if we received the standard AWS "envelope" object
+  // 1. Unwrap the Lambda Proxy "envelope" (Critical Fix)
   if (itemsToProcess && !Array.isArray(itemsToProcess)) {
-    // If there is a 'body' property, that is where the data lives
     if (itemsToProcess.body) {
       try {
-        // The body is usually a JSON string in Proxy Integration, so we parse it
         itemsToProcess = typeof itemsToProcess.body === 'string' 
           ? JSON.parse(itemsToProcess.body) 
           : itemsToProcess.body;
@@ -61,43 +82,54 @@ export const organizeMenuByCategory = (apiResponse: any): MenuCategory[] => {
         console.error("Failed to parse Lambda body JSON:", e);
         return [];
       }
-    } 
-    // Fallback: If using raw DynamoDB scans without proxy, data might be in 'Items'
-    else if (itemsToProcess.Items) {
+    } else if (itemsToProcess.Items) {
       itemsToProcess = itemsToProcess.Items;
     }
   }
-  // --- END FIX ---
 
-  // 2. Final validation: Do we have an array now?
+  // 2. Safety check
   if (!Array.isArray(itemsToProcess)) {
     console.warn("organizeMenuByCategory: Data is not an array. Received:", apiResponse);
     return [];
   }
 
-  // Filter out invalid items (missing Category)
+  // Filter out invalid items
   const validItems = itemsToProcess.filter(item => {
     const category = getProp(item, 'Category');
     return item && category;
   });
 
   if (validItems.length === 0) {
-    console.warn("organizeMenuByCategory: No valid items found after filtering.");
     return [];
   }
 
   // Transform all items
   const transformedItems = validItems.map(transformAPIMenuItem);
 
-  // Extract readable category names directly from API
+  // Extract unique category names
   const uniqueCategories = Array.from(
     new Set(validItems.map(item => getProp(item, 'Category')))
   ) as string[];
 
-  // Sort categories alphabetically
-  const sortedCategories = uniqueCategories.sort((a, b) =>
-    a.localeCompare(b)
-  );
+  // --- CUSTOM SORTING LOGIC ---
+  const sortedCategories = uniqueCategories.sort((a, b) => {
+    const indexA = CATEGORY_ORDER.indexOf(a);
+    const indexB = CATEGORY_ORDER.indexOf(b);
+
+    // If both are in our preferred list, sort by that order
+    if (indexA !== -1 && indexB !== -1) {
+      return indexA - indexB;
+    }
+
+    // If only A is in the list, A goes first
+    if (indexA !== -1) return -1;
+
+    // If only B is in the list, B goes first
+    if (indexB !== -1) return 1;
+
+    // If neither are in the list, fall back to alphabetical
+    return a.localeCompare(b);
+  });
 
   // Build category objects
   return sortedCategories.map(categoryName => {
@@ -109,8 +141,8 @@ export const organizeMenuByCategory = (apiResponse: any): MenuCategory[] => {
     const itemsInCategory = transformedItems.filter(item => item.category === slug);
 
     return {
-      id: slug,          // Used for DOM and scroll logic
-      name: categoryName, // Pretty name shown on website
+      id: slug,
+      name: categoryName,
       items: itemsInCategory
     };
   });
