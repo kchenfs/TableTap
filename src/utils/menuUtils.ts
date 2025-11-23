@@ -2,6 +2,7 @@ import { MenuItem, MenuCategory } from './types';
 
 // Helper to safely get a property regardless of casing (PascalCase or camelCase)
 const getProp = (item: any, key: string) => {
+  if (!item) return undefined;
   if (item[key] !== undefined) return item[key];
 
   const camelKey = key.charAt(0).toLowerCase() + key.slice(1);
@@ -42,21 +43,46 @@ export const transformAPIMenuItem = (apiItem: any): MenuItem => {
 };
 
 // Organize items into categories the UI can render
-export const organizeMenuByCategory = (apiItems: any[]): MenuCategory[] => {
-  if (!Array.isArray(apiItems)) {
-    console.warn("organizeMenuByCategory: apiItems is not an array", apiItems);
+export const organizeMenuByCategory = (apiResponse: any): MenuCategory[] => {
+  let itemsToProcess = apiResponse;
+
+  // --- FIX: DETECT AND UNWRAP LAMBDA PROXY RESPONSE ---
+  
+  // 1. Check if we received the standard AWS "envelope" object
+  if (itemsToProcess && !Array.isArray(itemsToProcess)) {
+    // If there is a 'body' property, that is where the data lives
+    if (itemsToProcess.body) {
+      try {
+        // The body is usually a JSON string in Proxy Integration, so we parse it
+        itemsToProcess = typeof itemsToProcess.body === 'string' 
+          ? JSON.parse(itemsToProcess.body) 
+          : itemsToProcess.body;
+      } catch (e) {
+        console.error("Failed to parse Lambda body JSON:", e);
+        return [];
+      }
+    } 
+    // Fallback: If using raw DynamoDB scans without proxy, data might be in 'Items'
+    else if (itemsToProcess.Items) {
+      itemsToProcess = itemsToProcess.Items;
+    }
+  }
+  // --- END FIX ---
+
+  // 2. Final validation: Do we have an array now?
+  if (!Array.isArray(itemsToProcess)) {
+    console.warn("organizeMenuByCategory: Data is not an array. Received:", apiResponse);
     return [];
   }
 
   // Filter out invalid items (missing Category)
-  const validItems = apiItems.filter(item => {
+  const validItems = itemsToProcess.filter(item => {
     const category = getProp(item, 'Category');
     return item && category;
   });
 
   if (validItems.length === 0) {
-    console.warn("organizeMenuByCategory: No valid items found. Check API keys.");
-    if (apiItems.length > 0) console.log("Sample raw item:", apiItems[0]);
+    console.warn("organizeMenuByCategory: No valid items found after filtering.");
     return [];
   }
 
@@ -68,7 +94,7 @@ export const organizeMenuByCategory = (apiItems: any[]): MenuCategory[] => {
     new Set(validItems.map(item => getProp(item, 'Category')))
   ) as string[];
 
-  // Optional: Sort categories (common restaurant ordering)
+  // Sort categories alphabetically
   const sortedCategories = uniqueCategories.sort((a, b) =>
     a.localeCompare(b)
   );
