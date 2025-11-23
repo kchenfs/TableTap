@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { APIMenuItem, MenuCategory } from '../types'; 
-import { organizeMenuByCategory } from '../menuUtils'; // <--- 1. Import this
+import { organizeMenuByCategory } from '../utils/menuUtils'; // <--- 1. Import this
 
 const fetchMenu = async (): Promise<APIMenuItem[]> => {
   const apiUrl = import.meta.env.VITE_API_URL_MENU;
