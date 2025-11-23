@@ -11,6 +11,7 @@ import { MenuProvider, useMenu } from './contexts/MenuContext';
 import { CartItem, MenuItem } from './types';
 import ItemOptionsModal from './components/ItemOptionsModal';
 import { X } from 'lucide-react';
+import { nanoid } from 'nanoid'; // Imported for Dine-in Order IDs
 
 // --- STRIPE IMPORTS ---
 import { loadStripe, StripeElementsOptions } from '@stripe/stripe-js';
@@ -42,13 +43,19 @@ let loaderScriptAdded = false;
 function MomotaroApp() {
   const { isLoading, error, categories } = useMenu();
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
-  const [searchTerm, setSearchTerm] = useState(''); // Search State
+  const [searchTerm, setSearchTerm] = useState('');
+
+  // --- APP MODE & CONFIGURATION ---
+  // Default to 'dine-in' if not specified
+  const appMode = import.meta.env.VITE_APP_MODE || 'dine-in'; 
+  const tableId = import.meta.env.VITE_TABLE_ID || 'table-1';
 
   // --- CART STATE ---
   const [cart, setCart] = useState<CartItem[]>([]);
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [selectedItem, setSelectedItem] = useState<MenuItem | null>(null);
   const [orderNote, setOrderNote] = useState('');
+  const [isCheckingOut, setIsCheckingOut] = useState(false);
 
   // --- STRIPE STATE ---
   const [clientSecret, setClientSecret] = useState<string | null>(null);
@@ -58,13 +65,11 @@ function MomotaroApp() {
   useEffect(() => {
     if (loaderScriptAdded) return;
     const CLOUDFRONT_URL = "https://d2ibqiw1xziqq9.cloudfront.net";
-    let configFileName;
-    if (window.location.origin.includes("dine-in")) {
-      configFileName = "lex-web-ui-loader-config-dinein.json";
-    } else if (window.location.origin.includes("take-out")) {
+    
+    // Logic to pick the right config based on URL or Env
+    let configFileName = "lex-web-ui-loader-config-dinein.json";
+    if (window.location.origin.includes("take-out") || appMode === 'takeout') {
       configFileName = "lex-web-ui-loader-config-takeout.json";
-    } else {
-      configFileName = "lex-web-ui-loader-config-dinein.json";
     }
 
     const script = document.createElement('script');
@@ -77,13 +82,13 @@ function MomotaroApp() {
         const response = await fetch(`${CLOUDFRONT_URL}/${configFileName}`);
         if (!response.ok) throw new Error(`Failed to load config`);
         const configJson = await response.json();
+        
         const loaderOptions = {
           baseUrl: CLOUDFRONT_URL,
           shouldLoadMinDeps: true,
-          config: configJson,
-          configUrl: null,
-          configPath: null
+          config: configJson
         };
+
         const iframeLoader = new window.ChatBotUiLoader.IframeLoader(loaderOptions);
         const overrides = {
           ui: {
@@ -114,26 +119,18 @@ function MomotaroApp() {
     }
   }, [categories, activeCategory]);
 
-  // --- FILTER LOGIC FOR SEARCH ---
+  // --- FILTER LOGIC ---
   const filteredCategories = useMemo(() => {
     if (!categories) return [];
     if (!searchTerm.trim()) return categories;
-
     const lowerTerm = searchTerm.toLowerCase();
-    
     return categories.map(category => {
-      // Filter items within the category
       const matchingItems = category.items.filter(item => 
         item.name.toLowerCase().includes(lowerTerm) || 
         item.description.toLowerCase().includes(lowerTerm)
       );
-      
-      // Return a new category object with only matching items
-      return {
-        ...category,
-        items: matchingItems
-      };
-    }).filter(category => category.items.length > 0); // Remove empty categories
+      return { ...category, items: matchingItems };
+    }).filter(category => category.items.length > 0);
   }, [categories, searchTerm]);
 
   // --- SCROLL HANDLERS ---
@@ -141,10 +138,8 @@ function MomotaroApp() {
     setActiveCategory(categoryId);
     const element = document.getElementById(categoryId);
     if (element) {
-      // Offset needs to account for Header (64px) + Sticky Mobile Sidebar (~110px)
-      // On Desktop, just Header + Sidebar padding
       const isMobile = window.innerWidth < 1024;
-      const headerOffset = isMobile ? 180 : 80; // Adjusted offset for sticky mobile search
+      const headerOffset = isMobile ? 180 : 80;
       const elementPosition = element.getBoundingClientRect().top;
       const offsetPosition = elementPosition + window.pageYOffset - headerOffset;
       window.scrollTo({ top: offsetPosition, behavior: 'smooth' });
@@ -168,7 +163,7 @@ function MomotaroApp() {
     if (currentCategory) setActiveCategory(currentCategory);
   };
 
-  // --- CART HANDLERS ---
+  // --- CART ACTIONS ---
   const handleAddToCart = (itemWithOptions: CartItem) => {
     setCart(prev => [...prev, itemWithOptions]);
     setSelectedItem(null);
@@ -190,10 +185,14 @@ function MomotaroApp() {
     return (cart || []).reduce((acc, item) => acc + item.finalPrice * item.quantity, 0);
   }, [cart]);
 
-  // --- STRIPE INTENT ---
+
+  // --- STRIPE INTENT (ONLY FOR TAKEOUT) ---
   useEffect(() => {
-    if (total > 0) {
-      axios.post('/.netlify/functions/create-payment-intent', {
+    // Optimization: Only fetch payment intent if we are in takeout mode
+    if (appMode === 'takeout' && total > 0) {
+      const PAYMENT_API_URL = import.meta.env.VITE_PAYMENT_API_URL || "https://097zxtivqd.execute-api.ca-central-1.amazonaws.com/PROD/create-payment-intent";
+
+      axios.post(PAYMENT_API_URL, {
         amount: Math.round(total * 100),
         cart: cart.map(item => ({
           id: item.menuItem.id,
@@ -207,7 +206,67 @@ function MomotaroApp() {
     } else {
       setClientSecret(null);
     }
-  }, [total, cart]);
+  }, [total, cart, appMode]); // Added appMode dependency
+
+  // --- DUAL CHECKOUT HANDLER ---
+  const handleCheckout = async () => {
+    setIsCheckingOut(true);
+
+    // 1. TAKEOUT FLOW
+    if (appMode === 'takeout') {
+      if (clientSecret) {
+        setIsCheckoutModalOpen(true);
+        setIsCartOpen(false);
+      } else {
+        // Retry fetching secret or show error
+        console.warn("Client secret not ready yet");
+      }
+      setIsCheckingOut(false);
+    } 
+    // 2. DINE-IN FLOW
+    else {
+      try {
+        const apiKey = import.meta.env.VITE_API_KEY;
+        const TableTapUrl = import.meta.env.VITE_TABLE_TAP_URL;
+        
+        // Headers for AWS IoT/Lambda
+        const headers = { 'Content-Type': 'application/json', 'x-api-key': apiKey };
+
+        const orderData = {
+          items: cart.map(item => ({
+            id: item.menuItem.id,
+            name: item.menuItem.name,
+            price: item.finalPrice,
+            quantity: item.quantity,
+            subtotal: item.finalPrice * item.quantity,
+            location: item.menuItem.location,
+            options: Object.entries(item.selectedOptions).map(([group, option]) =>
+              `${group}: ${option.name}`
+            ).join('; ')
+          })),
+          total,
+          orderDate: new Date().toISOString(),
+          order_id: nanoid(5).toUpperCase(),
+          notes: orderNote || '',
+          table: tableId,
+          orderType: appMode,
+        };
+
+        // Send to Kitchen
+        await axios.post(TableTapUrl, orderData, { headers });
+
+        setCart([]);
+        setIsCartOpen(false);
+        setOrderNote('');
+        alert('Order sent to the kitchen!');
+      } catch (error) {
+        console.error('Checkout failed:', error);
+        alert('Failed to send order. Please show your cart to the staff.');
+      } finally {
+        setIsCheckingOut(false);
+      }
+    }
+  };
 
   const stripeOptions: StripeElementsOptions = {
     clientSecret: clientSecret || undefined,
@@ -231,12 +290,10 @@ function MomotaroApp() {
   return (
     <div className="min-h-screen bg-slate-900 text-slate-100 flex flex-col">
       
-      {/* Header is now global and outside Main */}
       <Header cart={cart} onCartClick={() => setIsCartOpen(true)} />
 
       <div className="flex-1 flex flex-col lg:flex-row max-w-7xl mx-auto w-full">
         
-        {/* Sidebar handles Sticky Search & Categories */}
         <Sidebar
           categories={categories || []}
           activeCategory={activeCategory}
@@ -245,13 +302,15 @@ function MomotaroApp() {
           onSearchChange={setSearchTerm}
         />
 
-        {/* Main Content */}
         <main className="flex-1 px-4 pb-20 lg:px-8" onScroll={handleScroll}>
-          
-          {/* Desktop Title */}
-          <div className="hidden lg:block py-6 border-b border-slate-800 mb-6">
-            <h1 className="text-3xl font-bold text-white">Welcome to Table 1</h1>
-          </div>
+          {/* Only show "Welcome to Table X" for Dine-In */}
+          {appMode === 'dine-in' && (
+            <div className="hidden lg:block py-6 border-b border-slate-800 mb-6">
+              <h1 className="text-3xl font-bold text-white">
+                Welcome to Table {tableId?.replace('table-', '')}
+              </h1>
+            </div>
+          )}
 
           {isLoading && <LoadingSpinner />}
           {error && <ErrorMessage error={error instanceof Error ? error : new Error('Unknown error')} />}
@@ -277,17 +336,18 @@ function MomotaroApp() {
         </main>
       </div>
 
-      {/* Modals and Cart */}
+      {/* Cart with Dynamic Button Text */}
       <Cart
         isOpen={isCartOpen}
         onClose={() => setIsCartOpen(false)}
         cart={cart}
         onUpdateQuantity={handleUpdateQuantity}
         onRemoveItem={handleRemoveItem}
-        onCheckout={() => { if(clientSecret) setIsCheckoutModalOpen(true); setIsCartOpen(false); }}
+        onCheckout={handleCheckout}
+        isCheckingOut={isCheckingOut} // Pass loading state
         orderNote={orderNote}
         onNoteChange={setOrderNote}
-        checkoutButtonText="Proceed to Checkout"
+        checkoutButtonText={appMode === 'takeout' ? 'Proceed to Checkout' : 'Send to Kitchen'}
       />
 
       {selectedItem && (
@@ -299,7 +359,8 @@ function MomotaroApp() {
         />
       )}
 
-      {isCheckoutModalOpen && clientSecret && (
+      {/* Stripe Modal - Only shows if Open AND Secret exists (Takeout only) */}
+      {isCheckoutModalOpen && clientSecret && appMode === 'takeout' && (
         <>
           <div className="fixed inset-0 bg-black/60 z-40" onClick={() => setIsCheckoutModalOpen(false)} />
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
