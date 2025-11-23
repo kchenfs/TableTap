@@ -66,3 +66,4 @@ jobs:
             VITE_LEX_BOT_ID=${{ secrets.VITE_LEX_BOT_ID }}
             VITE_LEX_BOT_ALIAS_ID=${{ secrets.VITE_LEX_BOT_ALIAS_ID }}
             VITE_LEX_BOT_LOCALE_ID=${{ secrets.VITE_LEX_BOT_LOCALE_ID }}
+            VITE_STRIPE_PUBLISHABLE_KEY=${{ secrets.VITE_STRIPE_PUBLISHABLE_KEY }}
