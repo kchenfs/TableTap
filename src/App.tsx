@@ -11,7 +11,7 @@ import { MenuProvider, useMenu } from './contexts/MenuContext';
 import { CartItem, MenuItem } from './types';
 import ItemOptionsModal from './components/ItemOptionsModal';
 import { X } from 'lucide-react';
-import { nanoid } from 'nanoid'; // Imported for Dine-in Order IDs
+import { nanoid } from 'nanoid';
 
 // --- STRIPE IMPORTS ---
 import { loadStripe, StripeElementsOptions } from '@stripe/stripe-js';
@@ -34,9 +34,15 @@ const queryClient = new QueryClient({
   },
 });
 
-const stripePromise = loadStripe(
-  'pk_live_51LbmMgEqeptNz41b8FkXq1eH1xP8sKzP3b0d2a8CqDq7D0e8d3f6kX4f2h1c8w9c2f6j3b5e4a3s2d1f0g0hYt'
-);
+
+const STRIPE_KEY = import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY;
+
+if (!STRIPE_KEY) {
+  console.error("⚠️ Stripe Publishable Key is missing. Check your Docker build args.");
+}
+
+// Pass the variable (or an empty string to prevent crash if missing)
+const stripePromise = loadStripe(STRIPE_KEY || '');
 
 let loaderScriptAdded = false;
 
@@ -46,7 +52,6 @@ function MomotaroApp() {
   const [searchTerm, setSearchTerm] = useState('');
 
   // --- APP MODE & CONFIGURATION ---
-  // Default to 'dine-in' if not specified
   const appMode = import.meta.env.VITE_APP_MODE || 'dine-in'; 
   const tableId = import.meta.env.VITE_TABLE_ID || 'table-1';
 
@@ -66,7 +71,6 @@ function MomotaroApp() {
     if (loaderScriptAdded) return;
     const CLOUDFRONT_URL = "https://d2ibqiw1xziqq9.cloudfront.net";
     
-    // Logic to pick the right config based on URL or Env
     let configFileName = "lex-web-ui-loader-config-dinein.json";
     if (window.location.origin.includes("take-out") || appMode === 'takeout') {
       configFileName = "lex-web-ui-loader-config-takeout.json";
@@ -186,9 +190,8 @@ function MomotaroApp() {
   }, [cart]);
 
 
-  // --- STRIPE INTENT (ONLY FOR TAKEOUT) ---
+  // --- STRIPE INTENT (TAKE-OUT LOGIC) ---
   useEffect(() => {
-    // Optimization: Only fetch payment intent if we are in takeout mode
     if (appMode === 'takeout' && total > 0) {
       const PAYMENT_API_URL = import.meta.env.VITE_PAYMENT_API_URL || "https://097zxtivqd.execute-api.ca-central-1.amazonaws.com/PROD/create-payment-intent";
 
@@ -199,6 +202,8 @@ function MomotaroApp() {
           name: item.menuItem.name,
           quantity: item.quantity,
           price: item.finalPrice,
+          // ✅ FIX: Send selected options so backend can calculate add-on prices
+          selectedOptions: item.selectedOptions 
         })),
       })
       .then(res => setClientSecret(res.data.clientSecret))
@@ -206,30 +211,27 @@ function MomotaroApp() {
     } else {
       setClientSecret(null);
     }
-  }, [total, cart, appMode]); // Added appMode dependency
+  }, [total, cart, appMode]); 
 
-  // --- DUAL CHECKOUT HANDLER ---
+  // --- CHECKOUT BUTTON CLICK HANDLER ---
   const handleCheckout = async () => {
     setIsCheckingOut(true);
 
-    // 1. TAKEOUT FLOW
     if (appMode === 'takeout') {
       if (clientSecret) {
         setIsCheckoutModalOpen(true);
         setIsCartOpen(false);
       } else {
-        // Retry fetching secret or show error
         console.warn("Client secret not ready yet");
       }
       setIsCheckingOut(false);
     } 
-    // 2. DINE-IN FLOW
     else {
+      // --- DINE-IN LOGIC ---
       try {
         const apiKey = import.meta.env.VITE_API_KEY;
         const TableTapUrl = import.meta.env.VITE_TABLE_TAP_URL;
         
-        // Headers for AWS IoT/Lambda
         const headers = { 'Content-Type': 'application/json', 'x-api-key': apiKey };
 
         const orderData = {
@@ -252,7 +254,6 @@ function MomotaroApp() {
           orderType: appMode,
         };
 
-        // Send to Kitchen
         await axios.post(TableTapUrl, orderData, { headers });
 
         setCart([]);
@@ -289,11 +290,9 @@ function MomotaroApp() {
 
   return (
     <div className="min-h-screen bg-slate-900 text-slate-100 flex flex-col">
-      
       <Header cart={cart} onCartClick={() => setIsCartOpen(true)} />
 
       <div className="flex-1 flex flex-col lg:flex-row max-w-7xl mx-auto w-full">
-        
         <Sidebar
           categories={categories || []}
           activeCategory={activeCategory}
@@ -303,7 +302,6 @@ function MomotaroApp() {
         />
 
         <main className="flex-1 px-4 pb-20 lg:px-8" onScroll={handleScroll}>
-          {/* Only show "Welcome to Table X" for Dine-In */}
           {appMode === 'dine-in' && (
             <div className="hidden lg:block py-6 border-b border-slate-800 mb-6">
               <h1 className="text-3xl font-bold text-white">
@@ -336,7 +334,6 @@ function MomotaroApp() {
         </main>
       </div>
 
-      {/* Cart with Dynamic Button Text */}
       <Cart
         isOpen={isCartOpen}
         onClose={() => setIsCartOpen(false)}
@@ -344,7 +341,7 @@ function MomotaroApp() {
         onUpdateQuantity={handleUpdateQuantity}
         onRemoveItem={handleRemoveItem}
         onCheckout={handleCheckout}
-        isCheckingOut={isCheckingOut} // Pass loading state
+        isCheckingOut={isCheckingOut} 
         orderNote={orderNote}
         onNoteChange={setOrderNote}
         checkoutButtonText={appMode === 'takeout' ? 'Proceed to Checkout' : 'Send to Kitchen'}
@@ -359,7 +356,6 @@ function MomotaroApp() {
         />
       )}
 
-      {/* Stripe Modal - Only shows if Open AND Secret exists (Takeout only) */}
       {isCheckoutModalOpen && clientSecret && appMode === 'takeout' && (
         <>
           <div className="fixed inset-0 bg-black/60 z-40" onClick={() => setIsCheckoutModalOpen(false)} />
