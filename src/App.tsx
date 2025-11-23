@@ -71,7 +71,10 @@ function MomotaroApp() {
     if (loaderScriptAdded) return;
     const CLOUDFRONT_URL = "https://d2ibqiw1xziqq9.cloudfront.net";
     
+    // 1. Determine which config file to use based on the URL
     let configFileName = "lex-web-ui-loader-config-dinein.json";
+    
+    // Check if we are on the take-out domain OR in take-out mode
     if (window.location.origin.includes("take-out") || appMode === 'takeout') {
       configFileName = "lex-web-ui-loader-config-takeout.json";
     }
@@ -83,6 +86,7 @@ function MomotaroApp() {
     script.onload = async () => {
       if (!window.ChatBotUiLoader) return;
       try {
+        // 2. Manually fetch the correct config file
         const response = await fetch(`${CLOUDFRONT_URL}/${configFileName}`);
         if (!response.ok) throw new Error(`Failed to load config`);
         const configJson = await response.json();
@@ -90,6 +94,8 @@ function MomotaroApp() {
         const loaderOptions = {
           baseUrl: CLOUDFRONT_URL,
           shouldLoadMinDeps: true,
+          // ✅ CRITICAL FIX: This tells the library "I already have the config, don't look for the default file"
+          shouldLoadConfigFromJsonFile: false, 
           config: configJson
         };
 
