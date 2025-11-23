@@ -55,10 +55,11 @@ def send_receipt_email(recipient_email, order_details, payment_details, items_li
         return False
 
     try:
+        # Load template (ensure this file exists in your Lambda deployment)
         with open('emailtemplate.html', 'r', encoding='utf-8') as f:
             html_template = f.read()
 
-        # --- SERVER-SIDE FORMATTING FOR NEW TEMPLATE ---
+        # --- SERVER-SIDE FORMATTING ---
         
         # 1. Format Amount
         total_decimal = order_details.get('total', Decimal('0.00'))
@@ -69,8 +70,9 @@ def send_receipt_email(recipient_email, order_details, payment_details, items_li
         paid_at_iso = order_details.get('paidAt_iso')
         if paid_at_iso:
             try:
+                # Handle ISO format including Z for UTC
                 date_obj = datetime.fromisoformat(paid_at_iso.replace('Z', '+00:00'))
-                date_text = date_obj.strftime('%b %d, %Y')  # Format: Oct 09, 2025
+                date_text = date_obj.strftime('%b %d, %Y')
             except (ValueError, TypeError) as e:
                 logger.error(f"Could not parse date {paid_at_iso}: {e}")
 
@@ -80,6 +82,8 @@ def send_receipt_email(recipient_email, order_details, payment_details, items_li
         brand = str(card_details.get('brand', 'card')).lower()
         last4 = card_details.get('last4', '')
         wallet = card_details.get('wallet')
+        
+        # Determine chip color/text based on brand
         if wallet:
             wallet_type = str(wallet.get('type') if isinstance(wallet, dict) else wallet).lower()
             if 'apple_pay' in wallet_type:
@@ -98,8 +102,13 @@ def send_receipt_email(recipient_email, order_details, payment_details, items_li
         items_html_rows = []
         for item in items_list:
             quantity = item.get('quantity', 1)
-            name = item.get('menuItem', {}).get('name', 'N/A')
-            price = Decimal(item.get('finalPrice', '0.00'))
+            # Handle nested menuItem structure or flat structure
+            name = item.get('name')
+            if not name:
+                name = item.get('menuItem', {}).get('name', 'Item')
+            
+            price = Decimal(str(item.get('finalPrice', '0.00')))
+            
             item_row_html = f"""
                 <tr>
                     <td style="padding: 8px 0; font-size: 14px; color: #0f172a;">{quantity}x {name}</td>
@@ -111,14 +120,25 @@ def send_receipt_email(recipient_email, order_details, payment_details, items_li
 
         # --- REPLACE ALL PLACEHOLDERS ---
         html_body = html_template
-        html_body = html_body.replace('__RECEIPT_ID_PLACEHOLDER__', order_details.get('orderId', 'N/A'))
+        html_body = html_body.replace('__RECEIPT_ID_PLACEHOLDER__', str(order_details.get('orderId', 'N/A')))
         html_body = html_body.replace('__ITEMS_LIST_PLACEHOLDER__', final_items_html)
         html_body = html_body.replace('__AMOUNT_PLACEHOLDER__', amount_text)
         html_body = html_body.replace('__DATE_PLACEHOLDER__', date_text)
         html_body = html_body.replace('__PAYMENT_METHOD_CHIPS_PLACEHOLDER__', chips_html)
         
-        subtotal = Decimal(order_details.get('subtotalCents', 0)) / 100
-        tax = Decimal(order_details.get('taxTotalCents', 0)) / 100
+        # --- FIX: Safe Decimal Conversion for Subtotal/Tax ---
+        subtotal_val = order_details.get('subtotalCents')
+        if subtotal_val is not None:
+             subtotal = Decimal(subtotal_val) / 100
+        else:
+             subtotal = Decimal('0.00')
+
+        tax_val = order_details.get('taxTotalCents')
+        if tax_val is not None:
+             tax = Decimal(tax_val) / 100
+        else:
+             tax = Decimal('0.00')
+
         html_body = html_body.replace('__SUBTOTAL_PLACEHOLDER__', f'CA${subtotal:.2f}')
         html_body = html_body.replace('__TAX_PLACEHOLDER__', f'CA${tax:.2f}')
 
@@ -152,26 +172,28 @@ def process_order(order_data, payment_details):
     total_price = Decimal(str(order_data_decimal.get('total', '0'))).quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
     
     # --------------------------------------------------------------
-    #  PARSE ITEMS – SUPPORT BOTH 'items_json' (Stripe) AND 'items' (Dine-in)
+    #  FIX: Look for 'items_summary' (Stripe default) OR 'items_json'
     # --------------------------------------------------------------
     items = []
-    items_json = order_data_decimal.get('items_json')
+    # Check both keys to be safe
+    items_json = order_data_decimal.get('items_summary') or order_data_decimal.get('items_json')
 
-    if items_json:  # Stripe / takeout: items come as JSON string
+    if items_json:  # Stripe / takeout path
         try:
             items = replace_floats_with_decimals(json.loads(items_json))
-            logger.debug("Items parsed from items_json (Stripe path)")
+            logger.info("Items successfully parsed from items_summary/items_json")
         except (json.JSONDecodeError, TypeError) as e:
             logger.warning(f"Could not parse items_json: {e}")
 
-    elif 'items' in order_data_decimal:  # Dine-in: items come as direct list
+    elif 'items' in order_data_decimal:  # Dine-in path
         try:
             items = replace_floats_with_decimals(order_data_decimal['items'])
-            logger.debug("Items taken from direct 'items' list (Dine-in path)")
+            logger.info("Items taken from direct 'items' list")
         except Exception as e:
             logger.warning(f"Could not process direct items list: {e}")
     else:
         logger.info("No items data found in payload – proceeding with empty list")
+    
     # --------------------------------------------------------------
 
     # 1. Save to DynamoDB
@@ -225,8 +247,8 @@ def process_order(order_data, payment_details):
             'total': total_price,
             'notes': order_data.get('notes', ''),
             'paidAt_iso': order_date_iso,
-            'subtotalCents': order_data.get('subtotal_cents'),
-            'taxTotalCents': order_data.get('tax_total_cents')
+            'subtotalCents': item_to_save_in_db.get('subtotalCents'),
+            'taxTotalCents': item_to_save_in_db.get('taxTotalCents')
         }
         send_receipt_email(recipient_email, order_details_for_email, payment_details, items)
 
@@ -234,12 +256,9 @@ def process_order(order_data, payment_details):
 
 # --- Main Handler ---
 def lambda_handler(event, context):
-    print(event)
-    logger.info("Lambda handler invoked.")
-    logger.info(f"DYNAMODB_TABLE_NAME: {DYNAMODB_TABLE_NAME}")
-    logger.info(f"PRINTER_TOPIC: {PRINTER_TOPIC}")
+    # logger.info(f"Event received: {json.dumps(event)}") # Valid for debug, remove in prod if sensitive
     
-    # Define CORS headers. Use your specific domain for better security.
+    # Define CORS headers
     headers = {
         "Access-Control-Allow-Origin": "https://dine-in.momotarosushi.ca",
         "Access-Control-Allow-Headers": "Content-Type",
@@ -285,7 +304,6 @@ def lambda_handler(event, context):
             order_data['paymentStatus'] = 'Dine-In'
             process_order(order_data, {})
 
-        # Add headers to the success response
         return {
             'statusCode': 200,
             'headers': headers,
@@ -294,7 +312,6 @@ def lambda_handler(event, context):
         
     except Exception as e:
         logger.error("Critical error in lambda_handler", exc_info=True)
-        # Add headers to the error response as well
         return {
             'statusCode': 500,
             'headers': headers,
