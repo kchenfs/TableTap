@@ -1,9 +1,11 @@
-version: '3.8' # Added for best practice
+version: '3.8'
 
 services:
-  # ... (all your table-1 to takeout services are perfect) ...
+  # =========================================
+  # APPLICATION SERVICES (Fixed Username)
+  # =========================================
   table-1:
-    image: kchencfs/tableai:table-1
+    image: ghcr.io/kchenfs/tableai:table-1
     pull_policy: always
     expose:
       - "80"
@@ -11,7 +13,7 @@ services:
       - restaurant-network
   
   table-2:
-    image: kchencfs/tableai:table-2
+    image: ghcr.io/kchenfs/tableai:table-2
     pull_policy: always
     expose:
       - "80"
@@ -19,7 +21,7 @@ services:
       - restaurant-network
   
   table-3:
-    image: kchencfs/tableai:table-3
+    image: ghcr.io/kchenfs/tableai:table-3
     pull_policy: always
     expose:
       - "80"
@@ -27,7 +29,7 @@ services:
       - restaurant-network
 
   table-4:
-    image: kchencfs/tableai:table-4
+    image: ghcr.io/kchenfs/tableai:table-4
     pull_policy: always
     expose:
       - "80"
@@ -35,7 +37,7 @@ services:
       - restaurant-network
 
   table-5:
-    image: kchencfs/tableai:table-5
+    image: ghcr.io/kchenfs/tableai:table-5
     pull_policy: always
     expose:
       - "80"
@@ -43,7 +45,7 @@ services:
       - restaurant-network
 
   table-6:
-    image: kchencfs/tableai:table-6
+    image: ghcr.io/kchenfs/tableai:table-6
     pull_policy: always
     expose:
       - "80"
@@ -51,7 +53,7 @@ services:
       - restaurant-network
 
   table-7:
-    image: kchencfs/tableai:table-7
+    image: ghcr.io/kchenfs/tableai:table-7
     pull_policy: always
     expose:
       - "80"
@@ -59,7 +61,7 @@ services:
       - restaurant-network
 
   table-8:
-    image: kchencfs/tableai:table-8
+    image: ghcr.io/kchenfs/tableai:table-8
     pull_policy: always
     expose:
       - "80"
@@ -67,7 +69,7 @@ services:
       - restaurant-network
 
   table-9:
-    image: kchencfs/tableai:table-9
+    image: ghcr.io/kchenfs/tableai:table-9
     pull_policy: always
     expose:
       - "80"
@@ -75,7 +77,7 @@ services:
       - restaurant-network
 
   table-10:
-    image: kchencfs/tableai:table-10
+    image: ghcr.io/kchenfs/tableai:table-10
     pull_policy: always
     expose:
       - "80"
@@ -83,7 +85,7 @@ services:
       - restaurant-network
 
   table-11:
-    image: kchencfs/tableai:table-11
+    image: ghcr.io/kchenfs/tableai:table-11
     pull_policy: always
     expose:
       - "80"
@@ -91,13 +93,16 @@ services:
       - restaurant-network
 
   takeout:
-    image: kchencfs/tableai:takeout
+    image: ghcr.io/kchenfs/tableai:takeout
     pull_policy: always
     expose:
       - "80"
     networks:
       - restaurant-network
 
+  # =========================================
+  # INFRASTRUCTURE SERVICES
+  # =========================================
   nginx-proxy:
     image: nginx:alpine
     ports:
@@ -107,7 +112,7 @@ services:
       - ./nginx-load-balancer.conf:/etc/nginx/nginx.conf:ro
       - ./certbot/conf:/etc/letsencrypt
       - ./certbot/www:/var/www/certbot
-      - nginx-logs:/var/log/nginx  # <--- FIX 1: Make Nginx write to the shared volume
+      - nginx-logs:/var/log/nginx
     restart: unless-stopped
     networks:
       - restaurant-network
@@ -121,6 +126,9 @@ services:
     networks:
       - restaurant-network
 
+  # =========================================
+  # MONITORING SERVICES
+  # =========================================
   promtail:
     image: grafana/promtail:latest
     container_name: promtail
@@ -133,35 +141,37 @@ services:
     command: -config.file=/etc/promtail/config.yml
     restart: unless-stopped
   
-  # --- ADD THIS SERVICE FOR SERVER METRICS ---
   node-exporter:
     image: prom/node-exporter:latest
     container_name: node-exporter
-    network_mode: "host" # Use host network to share Tailscale IP
+    network_mode: "host" # KEEPS host mode (Good for CPU stats)
+    # Removed 'ports' because network_mode: host already exposes everything
     volumes:
       - /proc:/host/proc:ro
-      - /sys:/host/sys:roig
+      - /sys:/host/sys:ro
       - /:/rootfs:ro
     command:
       - '--path.procfs=/host/proc'
       - '--path.sysfs=/host/sys'
       - '--path.rootfs=/rootfs'
-      - '--web.listen-address=0.0.0.0:9100' # Listen on all interfaces
+      - '--web.listen-address=0.0.0.0:9100'
     restart: unless-stopped
 
-  # --- ADD THIS SERVICE FOR DOCKER METRICS ---
   cadvisor:
     image: gcr.io/cadvisor/cadvisor:latest
     container_name: cadvisor
-    network_mode: "host" # Use host network to share Tailscale IP
+    # Removed 'network_mode: host' to use Bridge mode
+    ports:
+      - "8080:8080" # Maps container 8080 to host 8080
     volumes:
       - /:/rootfs:ro
       - /var/run:/var/run:rw
       - /sys:/sys:ro
       - /var/lib/docker/:/var/lib/docker:ro
     restart: unless-stopped
+    networks:
+      - restaurant-network
 
-# --- ADD THIS TOP-LEVEL SECTION TO DEFINE THE VOLUME ---
 volumes:
   nginx-logs:
 
