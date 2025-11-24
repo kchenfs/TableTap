@@ -9,6 +9,9 @@ services:
     pull_policy: always
     expose:
       - "80"
+    environment:
+      - OTEL_EXPORTER_OTLP_ENDPOINT=http://tabletap-monitor:4317
+      - OTEL_SERVICE_NAME=table-1
     networks:
       - restaurant-network
   
@@ -17,6 +20,9 @@ services:
     pull_policy: always
     expose:
       - "80"
+    environment:
+      - OTEL_EXPORTER_OTLP_ENDPOINT=http://tabletap-monitor:4317
+      - OTEL_SERVICE_NAME=table-2
     networks:
       - restaurant-network
   
@@ -25,6 +31,9 @@ services:
     pull_policy: always
     expose:
       - "80"
+    environment:
+      - OTEL_EXPORTER_OTLP_ENDPOINT=http://tabletap-monitor:4317
+      - OTEL_SERVICE_NAME=table-3
     networks:
       - restaurant-network
 
@@ -33,6 +42,9 @@ services:
     pull_policy: always
     expose:
       - "80"
+    environment:
+      - OTEL_EXPORTER_OTLP_ENDPOINT=http://tabletap-monitor:4317
+      - OTEL_SERVICE_NAME=table-4
     networks:
       - restaurant-network
 
@@ -41,6 +53,9 @@ services:
     pull_policy: always
     expose:
       - "80"
+    environment:
+      - OTEL_EXPORTER_OTLP_ENDPOINT=http://tabletap-monitor:4317
+      - OTEL_SERVICE_NAME=table-5
     networks:
       - restaurant-network
 
@@ -49,6 +64,9 @@ services:
     pull_policy: always
     expose:
       - "80"
+    environment:
+      - OTEL_EXPORTER_OTLP_ENDPOINT=http://tabletap-monitor:4317
+      - OTEL_SERVICE_NAME=table-6
     networks:
       - restaurant-network
 
@@ -57,6 +75,9 @@ services:
     pull_policy: always
     expose:
       - "80"
+    environment:
+      - OTEL_EXPORTER_OTLP_ENDPOINT=http://tabletap-monitor:4317
+      - OTEL_SERVICE_NAME=table-7
     networks:
       - restaurant-network
 
@@ -65,6 +86,9 @@ services:
     pull_policy: always
     expose:
       - "80"
+    environment:
+      - OTEL_EXPORTER_OTLP_ENDPOINT=http://tabletap-monitor:4317
+      - OTEL_SERVICE_NAME=table-8
     networks:
       - restaurant-network
 
@@ -73,6 +97,9 @@ services:
     pull_policy: always
     expose:
       - "80"
+    environment:
+      - OTEL_EXPORTER_OTLP_ENDPOINT=http://tabletap-monitor:4317
+      - OTEL_SERVICE_NAME=table-9
     networks:
       - restaurant-network
 
@@ -81,6 +108,9 @@ services:
     pull_policy: always
     expose:
       - "80"
+    environment:
+      - OTEL_EXPORTER_OTLP_ENDPOINT=http://tabletap-monitor:4317
+      - OTEL_SERVICE_NAME=table-10
     networks:
       - restaurant-network
 
@@ -89,6 +119,9 @@ services:
     pull_policy: always
     expose:
       - "80"
+    environment:
+      - OTEL_EXPORTER_OTLP_ENDPOINT=http://tabletap-monitor:4317
+      - OTEL_SERVICE_NAME=table-11
     networks:
       - restaurant-network
 
@@ -97,6 +130,9 @@ services:
     pull_policy: always
     expose:
       - "80"
+    environment:
+      - OTEL_EXPORTER_OTLP_ENDPOINT=http://tabletap-monitor:4317
+      - OTEL_SERVICE_NAME=takeout
     networks:
       - restaurant-network
 
@@ -144,8 +180,7 @@ services:
   node-exporter:
     image: prom/node-exporter:latest
     container_name: node-exporter
-    network_mode: "host" # KEEPS host mode (Good for CPU stats)
-    # Removed 'ports' because network_mode: host already exposes everything
+    network_mode: "host" 
     volumes:
       - /proc:/host/proc:ro
       - /sys:/host/sys:ro
@@ -160,9 +195,8 @@ services:
   cadvisor:
     image: gcr.io/cadvisor/cadvisor:latest
     container_name: cadvisor
-    # Removed 'network_mode: host' to use Bridge mode
     ports:
-      - "8080:8080" # Maps container 8080 to host 8080
+      - "8080:8080"
     volumes:
       - /:/rootfs:ro
       - /var/run:/var/run:rw
