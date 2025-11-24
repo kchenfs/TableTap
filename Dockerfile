@@ -37,10 +37,28 @@ COPY . .
 RUN npm run build
 
 # ===============================
-# 2️⃣ Production Stage
+# 2️⃣ Production Stage with OTEL
 # ===============================
-# Use the official NGINX OTel image (correct repository)
-FROM otel/opentelemetry-nginx:latest AS runner
+FROM nginx:alpine AS runner
+
+# Add NGINX repository and install OTEL module
+RUN set -x \
+    && apk add --no-cache --virtual .build-deps \
+        curl \
+    # Add NGINX signing key
+    && curl -o /tmp/nginx_signing.rsa.pub https://nginx.org/keys/nginx_signing.rsa.pub \
+    && mv /tmp/nginx_signing.rsa.pub /etc/apk/keys/ \
+    # Add NGINX repository
+    && printf "%s%s%s\n" \
+        "http://nginx.org/packages/alpine/v" \
+        $(egrep -o '^[0-9]+\.[0-9]+' /etc/alpine-release) \
+        "/main" \
+    | tee -a /etc/apk/repositories \
+    # Update and install nginx-module-otel
+    && apk update \
+    && apk add nginx-module-otel \
+    # Cleanup
+    && apk del .build-deps
 
 WORKDIR /usr/share/nginx/html
 
