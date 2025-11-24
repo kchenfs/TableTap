@@ -37,15 +37,11 @@ RUN npm install
 COPY . .
 RUN npm run build
 
+# ===============================
 # 2️⃣ Production Stage
 # ===============================
-FROM nginx:alpine AS runner
-
-# 1. Install the "Hearing Aid" (OpenTelemetry Module)
-RUN wget -O /etc/apk/keys/nginx_signing.rsa.pub https://nginx.org/keys/nginx_signing.rsa.pub \
-    && echo "https://nginx.org/packages/alpine/v$(cut -d'.' -f1,2 /etc/alpine-release)/main" >> /etc/apk/repositories \
-    && apk update \
-    && apk add --no-cache nginx-module-otel
+# ✅ USE THIS PRE-BUILT IMAGE (Includes OpenTelemetry)
+FROM nginxinc/nginx-otel:alpine-slim AS runner
 
 WORKDIR /usr/share/nginx/html
 
@@ -55,8 +51,7 @@ RUN rm -rf ./*
 # Copy built app from builder
 COPY --from=builder /app/dist ./
 
-# 2. COPY TO THE MASTER LOCATION (Overwriting the main config)
-# Note: We are copying to /etc/nginx/nginx.conf, NOT /conf.d/default.conf
+# Copy your Master Config
 COPY nginx.conf /etc/nginx/nginx.conf
 
 EXPOSE 80
