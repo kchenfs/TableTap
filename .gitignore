@@ -23,7 +23,6 @@ dist-ssr
 *.sw?
 .env
 
-
 #Certs
 
 153975d756b52c7e5b2d82c5540b5734cd5cac8c6ead7f0bdd73f72799e77afd-certificate.pem.crt
