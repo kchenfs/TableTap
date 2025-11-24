@@ -37,10 +37,12 @@ RUN npm install
 COPY . .
 RUN npm run build
 
-# ===============================
 # 2️⃣ Production Stage
 # ===============================
 FROM nginx:alpine AS runner
+
+# 1. Install the "Hearing Aid" (OpenTelemetry Module)
+RUN apk add --no-cache nginx-module-otel
 
 WORKDIR /usr/share/nginx/html
 
@@ -50,11 +52,10 @@ RUN rm -rf ./*
 # Copy built app from builder
 COPY --from=builder /app/dist ./
 
-# Copy custom nginx configuration
-COPY nginx.conf /etc/nginx/conf.d/default.conf
+# 2. COPY TO THE MASTER LOCATION (Overwriting the main config)
+# Note: We are copying to /etc/nginx/nginx.conf, NOT /conf.d/default.conf
+COPY nginx.conf /etc/nginx/nginx.conf
 
-# Expose port 80
 EXPOSE 80
 
-# Start nginx
 CMD ["nginx", "-g", "daemon off;"]

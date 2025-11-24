@@ -2,7 +2,7 @@ version: '3.8'
 
 services:
   # =========================================
-  # APPLICATION SERVICES (Fixed Username)
+  # APPLICATION SERVICES (Tables 1-11 + Takeout)
   # =========================================
   table-1:
     image: ghcr.io/kchenfs/tableai:table-1
@@ -10,29 +10,29 @@ services:
     expose:
       - "80"
     environment:
-      - OTEL_EXPORTER_OTLP_ENDPOINT=http://tabletap-monitor:4317
+      - OTEL_EXPORTER_OTLP_ENDPOINT=http://tabletap-monitor.taila459ef.ts.net:4317
       - OTEL_SERVICE_NAME=table-1
     networks:
       - restaurant-network
-  
+
   table-2:
     image: ghcr.io/kchenfs/tableai:table-2
     pull_policy: always
     expose:
       - "80"
     environment:
-      - OTEL_EXPORTER_OTLP_ENDPOINT=http://tabletap-monitor:4317
+      - OTEL_EXPORTER_OTLP_ENDPOINT=http://tabletap-monitor.taila459ef.ts.net:4317
       - OTEL_SERVICE_NAME=table-2
     networks:
       - restaurant-network
-  
+
   table-3:
     image: ghcr.io/kchenfs/tableai:table-3
     pull_policy: always
     expose:
       - "80"
     environment:
-      - OTEL_EXPORTER_OTLP_ENDPOINT=http://tabletap-monitor:4317
+      - OTEL_EXPORTER_OTLP_ENDPOINT=http://tabletap-monitor.taila459ef.ts.net:4317
       - OTEL_SERVICE_NAME=table-3
     networks:
       - restaurant-network
@@ -43,7 +43,7 @@ services:
     expose:
       - "80"
     environment:
-      - OTEL_EXPORTER_OTLP_ENDPOINT=http://tabletap-monitor:4317
+      - OTEL_EXPORTER_OTLP_ENDPOINT=http://tabletap-monitor.taila459ef.ts.net:4317
       - OTEL_SERVICE_NAME=table-4
     networks:
       - restaurant-network
@@ -54,7 +54,7 @@ services:
     expose:
       - "80"
     environment:
-      - OTEL_EXPORTER_OTLP_ENDPOINT=http://tabletap-monitor:4317
+      - OTEL_EXPORTER_OTLP_ENDPOINT=http://tabletap-monitor.taila459ef.ts.net:4317
       - OTEL_SERVICE_NAME=table-5
     networks:
       - restaurant-network
@@ -65,7 +65,7 @@ services:
     expose:
       - "80"
     environment:
-      - OTEL_EXPORTER_OTLP_ENDPOINT=http://tabletap-monitor:4317
+      - OTEL_EXPORTER_OTLP_ENDPOINT=http://tabletap-monitor.taila459ef.ts.net:4317
       - OTEL_SERVICE_NAME=table-6
     networks:
       - restaurant-network
@@ -76,7 +76,7 @@ services:
     expose:
       - "80"
     environment:
-      - OTEL_EXPORTER_OTLP_ENDPOINT=http://tabletap-monitor:4317
+      - OTEL_EXPORTER_OTLP_ENDPOINT=http://tabletap-monitor.taila459ef.ts.net:4317
       - OTEL_SERVICE_NAME=table-7
     networks:
       - restaurant-network
@@ -87,7 +87,7 @@ services:
     expose:
       - "80"
     environment:
-      - OTEL_EXPORTER_OTLP_ENDPOINT=http://tabletap-monitor:4317
+      - OTEL_EXPORTER_OTLP_ENDPOINT=http://tabletap-monitor.taila459ef.ts.net:4317
       - OTEL_SERVICE_NAME=table-8
     networks:
       - restaurant-network
@@ -98,7 +98,7 @@ services:
     expose:
       - "80"
     environment:
-      - OTEL_EXPORTER_OTLP_ENDPOINT=http://tabletap-monitor:4317
+      - OTEL_EXPORTER_OTLP_ENDPOINT=http://tabletap-monitor.taila459ef.ts.net:4317
       - OTEL_SERVICE_NAME=table-9
     networks:
       - restaurant-network
@@ -109,7 +109,7 @@ services:
     expose:
       - "80"
     environment:
-      - OTEL_EXPORTER_OTLP_ENDPOINT=http://tabletap-monitor:4317
+      - OTEL_EXPORTER_OTLP_ENDPOINT=http://tabletap-monitor.taila459ef.ts.net:4317
       - OTEL_SERVICE_NAME=table-10
     networks:
       - restaurant-network
@@ -120,7 +120,7 @@ services:
     expose:
       - "80"
     environment:
-      - OTEL_EXPORTER_OTLP_ENDPOINT=http://tabletap-monitor:4317
+      - OTEL_EXPORTER_OTLP_ENDPOINT=http://tabletap-monitor.taila459ef.ts.net:4317
       - OTEL_SERVICE_NAME=table-11
     networks:
       - restaurant-network
@@ -131,7 +131,7 @@ services:
     expose:
       - "80"
     environment:
-      - OTEL_EXPORTER_OTLP_ENDPOINT=http://tabletap-monitor:4317
+      - OTEL_EXPORTER_OTLP_ENDPOINT=http://tabletap-monitor.taila459ef.ts.net:4317
       - OTEL_SERVICE_NAME=takeout
     networks:
       - restaurant-network
@@ -165,22 +165,24 @@ services:
   # =========================================
   # MONITORING SERVICES
   # =========================================
-  promtail:
-    image: grafana/promtail:latest
-    container_name: promtail
-    network_mode: "host" 
-    volumes:
-      - ./promtail-config.yml:/etc/promtail/config.yml
-      - /var/run/docker.sock:/var/run/docker.sock:ro 
-      - /var/lib/docker/containers:/var/lib/docker/containers:ro 
-      - nginx-logs:/var/log/nginx:ro 
-    command: -config.file=/etc/promtail/config.yml
-    restart: unless-stopped
   
+  # 1. The Universal Shipper (Handles Logs & Metrics)
+  alloy:
+    image: grafana/alloy:latest
+    container_name: alloy
+    network_mode: "host" # Crucial for Tailscale & Exporter access
+    volumes:
+      - ./alloy-config.alloy:/etc/alloy/config.alloy:ro
+      - alloy-data:/var/lib/alloy/data
+      - /var/run/docker.sock:/var/run/docker.sock:ro # Needed for reading Container Logs
+    command: run --server.http.listen-addr=0.0.0.0:12345 --storage.path=/var/lib/alloy/data /etc/alloy/config.alloy
+    restart: unless-stopped
+
+  # 2. Host Metrics Exporter (Scraped by Alloy)
   node-exporter:
     image: prom/node-exporter:latest
     container_name: node-exporter
-    network_mode: "host" 
+    network_mode: "host"
     volumes:
       - /proc:/host/proc:ro
       - /sys:/host/sys:ro
@@ -192,6 +194,7 @@ services:
       - '--web.listen-address=0.0.0.0:9100'
     restart: unless-stopped
 
+  # 3. Container Metrics Exporter (Scraped by Alloy)
   cadvisor:
     image: gcr.io/cadvisor/cadvisor:latest
     container_name: cadvisor
@@ -208,7 +211,7 @@ services:
 
 volumes:
   nginx-logs:
+  alloy-data:
 
 networks:
   restaurant-network:
-    driver: bridge
