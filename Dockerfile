@@ -17,6 +17,7 @@ ARG VITE_LEX_BOT_ID
 ARG VITE_LEX_BOT_ALIAS_ID
 ARG VITE_LEX_BOT_LOCALE_ID
 ARG VITE_STRIPE_PUBLISHABLE_KEY
+
 # Expose arguments as environment variables for the build process
 ENV VITE_API_URL_MENU=$VITE_API_URL_MENU
 ENV VITE_API_KEY=$VITE_API_KEY
@@ -29,6 +30,7 @@ ENV VITE_LEX_BOT_ID=$VITE_LEX_BOT_ID
 ENV VITE_LEX_BOT_ALIAS_ID=$VITE_LEX_BOT_ALIAS_ID
 ENV VITE_LEX_BOT_LOCALE_ID=$VITE_LEX_BOT_LOCALE_ID
 ENV VITE_STRIPE_PUBLISHABLE_KEY=$VITE_STRIPE_PUBLISHABLE_KEY
+
 # Install dependencies
 COPY package.json package-lock.json* ./
 RUN npm install
@@ -40,7 +42,6 @@ RUN npm run build
 # ===============================
 # 2️⃣ Production Stage
 # ===============================
-# ✅ CHANGE THIS LINE: Use the image with OTEL pre-installed
 FROM nginxinc/nginx-otel:alpine-slim AS runner
 
 WORKDIR /usr/share/nginx/html
@@ -51,8 +52,12 @@ RUN rm -rf ./*
 # Copy built app from builder
 COPY --from=builder /app/dist ./
 
-# Copy your Master Config
+# Copy nginx config
 COPY nginx.conf /etc/nginx/nginx.conf
+
+# Optional: Add runtime OTEL configuration via environment variables
+ENV OTEL_EXPORTER_OTLP_ENDPOINT="tabletap-monitor.taila459ef.ts.net:4317"
+ENV OTEL_SERVICE_NAME="table-app"
 
 EXPOSE 80
 
