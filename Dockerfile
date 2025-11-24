@@ -39,7 +39,8 @@ RUN npm run build
 # ===============================
 # 2️⃣ Production Stage with OTEL
 # ===============================
-FROM nginx:alpine AS runner
+# Use NGINX 1.28 to match the OTEL module version
+FROM nginx:1.28-alpine AS runner
 
 # Add NGINX repository and install OTEL module
 RUN set -x \
