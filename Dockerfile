@@ -40,7 +40,7 @@ RUN npm run build
 # ===============================
 # 2️⃣ Production Stage
 # ===============================
-# ✅ USE THIS PRE-BUILT IMAGE (Includes OpenTelemetry)
+# ✅ CHANGE THIS LINE: Use the image with OTEL pre-installed
 FROM nginxinc/nginx-otel:alpine-slim AS runner
 
 WORKDIR /usr/share/nginx/html
