@@ -42,7 +42,10 @@ RUN npm run build
 FROM nginx:alpine AS runner
 
 # 1. Install the "Hearing Aid" (OpenTelemetry Module)
-RUN apk add --no-cache nginx-module-otel
+RUN wget -O /etc/apk/keys/nginx_signing.rsa.pub https://nginx.org/keys/nginx_signing.rsa.pub \
+    && echo "https://nginx.org/packages/alpine/v$(cut -d'.' -f1,2 /etc/alpine-release)/main" >> /etc/apk/repositories \
+    && apk update \
+    && apk add --no-cache nginx-module-otel
 
 WORKDIR /usr/share/nginx/html
 
