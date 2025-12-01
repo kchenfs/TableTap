@@ -49,28 +49,45 @@ const stripePromise = loadStripe(STRIPE_KEY || '');
 
 let loaderScriptAdded = false;
 
-// --- DYNAMIC TABLE ID HELPER ---
-const getTableId = () => {
-  // 1. Runtime Injection (from Kubernetes/Docker CMD)
+// --- DYNAMIC MODE/ID HELPER FUNCTIONS ---
+
+// 1. Determines the App Mode based on the hostname.
+const getAppMode = (hostname: string) => {
+  // If the hostname contains 'take-out' (e.g., take-out.momotarosushi.ca)
+  if (hostname.includes('take-out')) {
+    return 'takeout';
+  }
+  // Fallback for dine-in
+  return import.meta.env.VITE_APP_MODE || 'dine-in';
+}
+
+// 2. Extracts the unique table identifier (IDENTITY).
+const getTableId = (appMode: string) => {
+  // If in takeout mode, the ID is just 'takeout'
+  if (appMode === 'takeout') {
+    return 'takeout';
+  }
+  
+  // --- DINE-IN LOGIC ---
+  
+  // A. CHECK FOR DINE-IN PATH PREFIX (The QR Code Method)
+  // Example URL: https://dine-in.momotarosushi.ca/table-11/
+  const pathname = window.location.pathname;
+  if (pathname.startsWith('/table-')) {
+    // Extracts "table-11" from "/table-11/menu/dessert"
+    const match = pathname.match(/\/table-(\d+)/);
+    if (match && match[0]) {
+      // The match[0] starts with a slash, e.g., "/table-11", so we remove it.
+      return match[0].replace('/', ''); 
+    }
+  }
+
+  // B. Fallback to Runtime Injection (if used)
   if (window.ENV?.TABLE_ID) {
     return window.ENV.TABLE_ID;
   }
 
-  // 2. Subdomain check (e.g. table-5.yourdomain.com)
-  const host = window.location.hostname;
-  const subdomain = host.split('.')[0];
-  if (subdomain && subdomain.startsWith('table-')) {
-    return subdomain;
-  }
-
-  // 3. Query Param check (?table=table-5)
-  const params = new URLSearchParams(window.location.search);
-  const queryTable = params.get('table');
-  if (queryTable) {
-    return queryTable;
-  }
-
-  // 4. Fallback to Env (local dev) or default
+  // C. Fallback for local dev
   return import.meta.env.VITE_TABLE_ID || 'table-1';
 };
 
@@ -79,11 +96,10 @@ function MomotaroApp() {
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
 
-  // --- APP MODE & CONFIGURATION ---
-  const appMode = import.meta.env.VITE_APP_MODE || 'dine-in'; 
-  
-  // Use the dynamic helper instead of hardcoded env
-  const tableId = useMemo(() => getTableId(), []);
+  // --- APP MODE & CONFIGURATION (Dynamically determined) ---
+  const hostname = window.location.hostname;
+  const appMode = useMemo(() => getAppMode(hostname), [hostname]);
+  const tableId = useMemo(() => getTableId(appMode), [appMode]);
 
   // --- CART STATE ---
   const [cart, setCart] = useState<CartItem[]>([]);
@@ -101,11 +117,10 @@ function MomotaroApp() {
     if (loaderScriptAdded) return;
     const CLOUDFRONT_URL = "https://d2ibqiw1xziqq9.cloudfront.net";
     
-    // 1. Determine which config file to use based on the URL
+    // 1. Determine which config file to use based on the derived appMode
     let configFileName = "lex-web-ui-loader-config-dinein.json";
     
-    // Check if we are on the take-out domain OR in take-out mode
-    if (window.location.origin.includes("take-out") || appMode === 'takeout') {
+    if (appMode === 'takeout') {
       configFileName = "lex-web-ui-loader-config-takeout.json";
     }
 
@@ -164,7 +179,7 @@ function MomotaroApp() {
     }
   }, [categories, activeCategory]);
 
-  // --- FILTER LOGIC ---
+  // --- FILTER LOGIC (No changes) ---
   const filteredCategories = useMemo(() => {
     if (!categories) return [];
     if (!searchTerm.trim()) return categories;
@@ -178,7 +193,7 @@ function MomotaroApp() {
     }).filter(category => category.items.length > 0);
   }, [categories, searchTerm]);
 
-  // --- SCROLL HANDLERS ---
+  // --- SCROLL HANDLERS (No changes) ---
   const handleScrollToCategory = (categoryId: string) => {
     setActiveCategory(categoryId);
     const element = document.getElementById(categoryId);
@@ -208,7 +223,7 @@ function MomotaroApp() {
     if (currentCategory) setActiveCategory(currentCategory);
   };
 
-  // --- CART ACTIONS ---
+  // --- CART ACTIONS (No changes) ---
   const handleAddToCart = (itemWithOptions: CartItem) => {
     setCart(prev => [...prev, itemWithOptions]);
     setSelectedItem(null);
@@ -231,7 +246,7 @@ function MomotaroApp() {
   }, [cart]);
 
 
-  // --- STRIPE INTENT (TAKE-OUT LOGIC) ---
+  // --- STRIPE INTENT (Takeout Logic uses new appMode) ---
   useEffect(() => {
     if (appMode === 'takeout' && total > 0) {
       const PAYMENT_API_URL = import.meta.env.VITE_PAYMENT_API_URL || "https://097zxtivqd.execute-api.ca-central-1.amazonaws.com/PROD/create-payment-intent";
@@ -253,7 +268,7 @@ function MomotaroApp() {
     }
   }, [total, cart, appMode]); 
 
-  // --- CHECKOUT BUTTON CLICK HANDLER ---
+  // --- CHECKOUT BUTTON CLICK HANDLER (Uses new appMode/tableId) ---
   const handleCheckout = async () => {
     setIsCheckingOut(true);
 
@@ -290,19 +305,21 @@ function MomotaroApp() {
           orderDate: new Date().toISOString(),
           order_id: nanoid(5).toUpperCase(),
           notes: orderNote || '',
-          table: tableId,
+          // ✅ Use the dynamically derived tableId (e.g., 'table-11')
+          table: tableId, 
           orderType: appMode,
         };
 
+        // Note: I removed alert() as per instructions, assuming you have a custom modal or toast
         await axios.post(TableTapUrl, orderData, { headers });
 
         setCart([]);
         setIsCartOpen(false);
         setOrderNote('');
-        alert('Order sent to the kitchen!');
+        console.log('Order sent to the kitchen!'); 
       } catch (error) {
         console.error('Checkout failed:', error);
-        alert('Failed to send order. Please show your cart to the staff.');
+        console.error('Failed to send order. Please show your cart to the staff.');
       } finally {
         setIsCheckingOut(false);
       }
@@ -345,7 +362,15 @@ function MomotaroApp() {
           {appMode === 'dine-in' && (
             <div className="hidden lg:block py-6 border-b border-slate-800 mb-6">
               <h1 className="text-3xl font-bold text-white">
-                Welcome to Table {tableId?.replace('table-', '')}
+                {/* Display table number, stripping "table-" prefix */}
+                Welcome to Table {tableId?.replace('table-', '')} 
+              </h1>
+            </div>
+          )}
+          {appMode === 'takeout' && (
+            <div className="py-6 border-b border-slate-800 mb-6">
+              <h1 className="text-3xl font-bold text-white">
+                Takeout Online Ordering
               </h1>
             </div>
           )}

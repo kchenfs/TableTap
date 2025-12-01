@@ -1,26 +1,103 @@
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
-  name: tabletap-ingress
+  name: momotaro-ingress
   annotations:
+    # Use the Traefik Ingress Class deployed by K3s
     kubernetes.io/ingress.class: "traefik"
 spec:
   rules:
-  # Replace these with your REAL domains when you are ready
-  - host: table-1.test.local
+    # 1. TAKEOUT HOST: take-out.momotarosushi.ca
+    # The App.tsx sees 'take-out' in the hostname and switches to takeout mode.
+  - host: take-out.momotarosushi.ca
     http:
       paths:
       - path: /
         pathType: Prefix
         backend:
           service:
-            name: tabletap-service # MUST match the service name above
+            name: tabletap-service
             port:
               number: 80
-  - host: table-2.test.local
+
+    # 2. DINE-IN HOST: dine-in.momotarosushi.ca
+    # The App.tsx sees the '/table-X' path and extracts the table ID.
+  - host: dine-in.momotarosushi.ca
     http:
       paths:
-      - path: /
+        # Rules for /table-1/ up to /table-11/
+        # pathType: Prefix ensures it catches /table-X, /table-X/, and /table-X/menu
+      - path: /table-1
+        pathType: Prefix
+        backend:
+          service:
+            name: tabletap-service
+            port:
+              number: 80
+      - path: /table-2
+        pathType: Prefix
+        backend:
+          service:
+            name: tabletap-service
+            port:
+              number: 80
+      - path: /table-3
+        pathType: Prefix
+        backend:
+          service:
+            name: tabletap-service
+            port:
+              number: 80
+      - path: /table-4
+        pathType: Prefix
+        backend:
+          service:
+            name: tabletap-service
+            port:
+              number: 80
+      - path: /table-5
+        pathType: Prefix
+        backend:
+          service:
+            name: tabletap-service
+            port:
+              number: 80
+      - path: /table-6
+        pathType: Prefix
+        backend:
+          service:
+            name: tabletap-service
+            port:
+              number: 80
+      - path: /table-7
+        pathType: Prefix
+        backend:
+          service:
+            name: tabletap-service
+            port:
+              number: 80
+      - path: /table-8
+        pathType: Prefix
+        backend:
+          service:
+            name: tabletap-service
+            port:
+              number: 80
+      - path: /table-9
+        pathType: Prefix
+        backend:
+          service:
+            name: tabletap-service
+            port:
+              number: 80
+      - path: /table-10
+        pathType: Prefix
+        backend:
+          service:
+            name: tabletap-service
+            port:
+              number: 80
+      - path: /table-11
         pathType: Prefix
         backend:
           service:
