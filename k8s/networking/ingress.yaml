@@ -3,9 +3,9 @@ kind: Middleware
 metadata:
   # Define a middleware for path stripping
   name: table-path-stripper
+  namespace: default # Explicitly set namespace to match Ingress/Service
 spec:
   # This middleware strips the leading /table-X path prefix before forwarding to the service.
-  # This ensures the application (Nginx) always thinks it's running at the root /.
   stripPrefix:
     prefixes:
       - /table-1
@@ -28,17 +28,13 @@ metadata:
     # 1. Use the Traefik Ingress Class deployed by K3s
     kubernetes.io/ingress.class: "traefik"
     
-    # 2. Assign the Path Stripping Middleware to the Dine-In routes.
-    # Note: Middlewares must be prefixed with their namespace (default-...) if applied globally.
-    traefik.ingress.kubernetes.io/router.middlewares: default-table-path-stripper@kubernetescrd
-    
-    # 3. Enable Let's Encrypt TLS (uses the resolver defined in traefik-config.yaml)
+    # 2. Assign the TLS resolver globally for the Ingress
     traefik.ingress.kubernetes.io/router.tls: "true"
     traefik.ingress.kubernetes.io/router.tls.certresolver: le-staging
     
 spec:
   rules:
-    # RULE A: TAKEOUT HOST (No Path Stripping Needed, just forward root /)
+    # RULE A: TAKEOUT HOST (SIMPLE FORWARD)
   - host: take-out.momotarosushi.ca
     http:
       paths:
@@ -50,9 +46,12 @@ spec:
             port:
               number: 80
 
-    # RULE B: DINE-IN HOST (Path Stripping Required for Assets)
+    # RULE B: DINE-IN HOST (PATH STRIPPING APPLIED HERE)
   - host: dine-in.momotarosushi.ca
     http:
+      # Middleware reference applied at the host level
+      # This ensures ALL paths under this host use the middleware
+      # NOTE: THIS HOST RULE NO LONGER NEEDS THE MIDDLEWARE ANNOTATION IF WE APPLY IT GLOBALLY
       paths:
         # 1. Table-1 Path (Applies middleware to strip /table-1)
       - path: /table-1
