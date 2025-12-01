@@ -1,4 +1,3 @@
-# This file configures the K3s bundled Traefik instance to handle Let's Encrypt.
 apiVersion: helm.cattle.io/v1
 kind: HelmChartConfig
 metadata:
@@ -6,35 +5,28 @@ metadata:
   namespace: kube-system
 spec:
   valuesContent: |-
-    # --- ADDED PORTS CONFIGURATION ---
     ports:
-      # This block ensures Traefik's websecure entrypoint
-      # is exposed on the host's port 443.
       websecure:
-        port: 8443        # The port Traefik listens on internally in the container
+        port: 8443
         expose: true
-        exposedPort: 443 # The port exposed on the host machine (THIS IS THE KEY)
+        exposedPort: 443
         protocol: TCP
       web:
-        port: 8000        # Internal HTTP port
+        port: 8000
         expose: true
-        exposedPort: 80   # Host's port 80
+        exposedPort: 80
         protocol: TCP
-    # --- END ADDED CONFIGURATION ---
     
-    # Enable Let's Encrypt on the websecure entrypoint
     tolerations:
       - key: CriticalAddonsOnly
         operator: Exists
+    
     additionalArguments:
-      # Enable staging environment for testing certificates
-      - "--certificatesresolvers.le-staging.acme.email=kchenfs@gmail.com" # REPLACE THIS EMAIL
+      - "--certificatesresolvers.le-staging.acme.email=kchenfs@gmail.com"
       - "--certificatesresolvers.le-staging.acme.storage=/data/acme.json"
       - "--certificatesresolvers.le-staging.acme.caserver=https://acme-staging-v02.api.letsencrypt.org/directory"
-      # --- FIX: Add the TLS Challenge ---
       - "--certificatesresolvers.le-staging.acme.tlschallenge=true"
-      # -----------------------------------
-      - "--entrypoints.websecure.address=:443" # This is now the entrypoint *inside* Traefik container
-      # Global redirection of HTTP (web) to HTTPS (websecure)
+      - "--entrypoints.websecure.address=:8443"
+      - "--entrypoints.web.address=:8000"
       - "--entrypoints.web.http.redirections.entrypoint.to=websecure"
       - "--entrypoints.web.http.redirections.entrypoint.scheme=https"

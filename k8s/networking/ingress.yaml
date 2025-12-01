@@ -1,11 +1,9 @@
 apiVersion: traefik.io/v1alpha1
 kind: Middleware
 metadata:
-  # Define a middleware for path stripping
   name: table-path-stripper
-  namespace: default # Explicitly set namespace to match Ingress/Service
+  namespace: default
 spec:
-  # This middleware strips the leading /table-X path prefix before forwarding to the service.
   stripPrefix:
     prefixes:
       - /table-1
@@ -24,17 +22,14 @@ apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
   name: momotaro-ingress
+  namespace: default
   annotations:
-    # 1. Use the Traefik Ingress Class deployed by K3s
     kubernetes.io/ingress.class: "traefik"
-    
-    # 2. Assign the TLS resolver globally for the Ingress
     traefik.ingress.kubernetes.io/router.tls: "true"
-    traefik.ingress.kubernetes.io/router.tls.certresolver: le-staging
-    
+    traefik.ingress.kubernetes.io/router.tls.certresolver: "le-staging"
 spec:
   rules:
-    # RULE A: TAKEOUT HOST (SIMPLE FORWARD)
+  # RULE A: TAKEOUT HOST
   - host: take-out.momotarosushi.ca
     http:
       paths:
@@ -46,14 +41,10 @@ spec:
             port:
               number: 80
 
-    # RULE B: DINE-IN HOST (PATH STRIPPING APPLIED HERE)
+  # RULE B: DINE-IN HOST (WITH PATH STRIPPING)
   - host: dine-in.momotarosushi.ca
     http:
-      # Middleware reference applied at the host level
-      # This ensures ALL paths under this host use the middleware
-      # NOTE: THIS HOST RULE NO LONGER NEEDS THE MIDDLEWARE ANNOTATION IF WE APPLY IT GLOBALLY
       paths:
-        # 1. Table-1 Path (Applies middleware to strip /table-1)
       - path: /table-1
         pathType: Prefix
         backend:
@@ -61,8 +52,6 @@ spec:
             name: tabletap-service
             port:
               number: 80
-        
-        # 2. Table-2 Path
       - path: /table-2
         pathType: Prefix
         backend:
@@ -70,8 +59,6 @@ spec:
             name: tabletap-service
             port:
               number: 80
-
-        # 3. Table-3 Path
       - path: /table-3
         pathType: Prefix
         backend:
@@ -79,8 +66,6 @@ spec:
             name: tabletap-service
             port:
               number: 80
-        
-        # 4. Table-4 Path
       - path: /table-4
         pathType: Prefix
         backend:
@@ -88,8 +73,6 @@ spec:
             name: tabletap-service
             port:
               number: 80
-
-        # 5. Table-5 Path
       - path: /table-5
         pathType: Prefix
         backend:
@@ -97,8 +80,6 @@ spec:
             name: tabletap-service
             port:
               number: 80
-
-        # 6. Table-6 Path
       - path: /table-6
         pathType: Prefix
         backend:
@@ -106,8 +87,6 @@ spec:
             name: tabletap-service
             port:
               number: 80
-
-        # 7. Table-7 Path
       - path: /table-7
         pathType: Prefix
         backend:
@@ -115,8 +94,6 @@ spec:
             name: tabletap-service
             port:
               number: 80
-
-        # 8. Table-8 Path
       - path: /table-8
         pathType: Prefix
         backend:
@@ -124,8 +101,6 @@ spec:
             name: tabletap-service
             port:
               number: 80
-
-        # 9. Table-9 Path
       - path: /table-9
         pathType: Prefix
         backend:
@@ -133,8 +108,6 @@ spec:
             name: tabletap-service
             port:
               number: 80
-
-        # 10. Table-10 Path
       - path: /table-10
         pathType: Prefix
         backend:
@@ -142,8 +115,6 @@ spec:
             name: tabletap-service
             port:
               number: 80
-              
-        # 11. Table-11 Path
       - path: /table-11
         pathType: Prefix
         backend:
@@ -151,8 +122,6 @@ spec:
             name: tabletap-service
             port:
               number: 80
-      
-      # 12. CATCH-ALL Redirect for dine-in.momotarosushi.ca/ (If user forgets /table-X)
       - path: /
         pathType: Exact
         backend:
