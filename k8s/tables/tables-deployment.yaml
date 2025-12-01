@@ -1,43 +1,38 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: table-app
+  name: tabletap-app
   labels:
-    app: table-app
+    app: tabletap
 spec:
-  # Start with 2 replicas for high availability
   replicas: 2
   selector:
     matchLabels:
-      app: table-app
+      app: tabletap
   template:
     metadata:
       labels:
-        app: table-app
+        app: tabletap
     spec:
       containers:
-      - name: table-app
-        # Make sure this matches your GHCR package name EXACTLY (lowercase)
+      - name: tabletap
         image: ghcr.io/kchenfs/tabletap:latest
-        imagePullPolicy: Always # Forces K8s to check for a new image on restart
+        imagePullPolicy: Always
         ports:
         - containerPort: 80
         env:
-        # These variables are injected into the container environment.
-        # NOTE: Your React app can't see these directly unless your Dockerfile
-        # writes them to window.ENV (like we did for TABLE_ID).
-        # Typically, these are baked in at BUILD time via ARG in Dockerfile.
-        # But keeping them here is good documentation.
-  
+        # Documentation only - real values are baked into the image
+        - name: VITE_APP_MODE
+          value: "dine-in"
 ---
 apiVersion: v1
 kind: Service
 metadata:
-  name: table-service
+  name: tabletap-service
 spec:
   type: ClusterIP
   selector:
-    app: table-app
+    app: tabletap
   ports:
   - port: 80
     targetPort: 80
