@@ -1,0 +1,21 @@
+# This file configures the K3s bundled Traefik instance to handle Let's Encrypt.
+apiVersion: helm.cattle.io/v1
+kind: HelmChartConfig
+metadata:
+  name: traefik
+  namespace: kube-system
+spec:
+  valuesContent: |-
+    # Enable Let's Encrypt on the websecure entrypoint
+    tolerations:
+      - key: CriticalAddonsOnly
+        operator: Exists
+    additionalArguments:
+      # Enable staging environment for testing certificates
+      - "--certificatesresolvers.le-staging.acme.email=kchenfs@gmail.com" # REPLACE THIS EMAIL
+      - "--certificatesresolvers.le-staging.acme.storage=/data/acme.json"
+      - "--certificatesresolvers.le-staging.acme.caserver=https://acme-staging-v02.api.letsencrypt.org/directory"
+      - "--entrypoints.websecure.address=:443"
+      # Global redirection of HTTP (web) to HTTPS (websecure)
+      - "--entrypoints.web.http.redirections.entrypoint.to=websecure"
+      - "--entrypoints.web.http.redirections.entrypoint.scheme=https"
