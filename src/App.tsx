@@ -22,6 +22,9 @@ import Completion from './components/Completion';
 declare global {
   interface Window {
     ChatBotUiLoader: any;
+    ENV?: {
+      TABLE_ID?: string;
+    };
   }
 }
 
@@ -46,6 +49,31 @@ const stripePromise = loadStripe(STRIPE_KEY || '');
 
 let loaderScriptAdded = false;
 
+// --- DYNAMIC TABLE ID HELPER ---
+const getTableId = () => {
+  // 1. Runtime Injection (from Kubernetes/Docker CMD)
+  if (window.ENV?.TABLE_ID) {
+    return window.ENV.TABLE_ID;
+  }
+
+  // 2. Subdomain check (e.g. table-5.yourdomain.com)
+  const host = window.location.hostname;
+  const subdomain = host.split('.')[0];
+  if (subdomain && subdomain.startsWith('table-')) {
+    return subdomain;
+  }
+
+  // 3. Query Param check (?table=table-5)
+  const params = new URLSearchParams(window.location.search);
+  const queryTable = params.get('table');
+  if (queryTable) {
+    return queryTable;
+  }
+
+  // 4. Fallback to Env (local dev) or default
+  return import.meta.env.VITE_TABLE_ID || 'table-1';
+};
+
 function MomotaroApp() {
   const { isLoading, error, categories } = useMenu();
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
@@ -53,7 +81,9 @@ function MomotaroApp() {
 
   // --- APP MODE & CONFIGURATION ---
   const appMode = import.meta.env.VITE_APP_MODE || 'dine-in'; 
-  const tableId = import.meta.env.VITE_TABLE_ID || 'table-1';
+  
+  // Use the dynamic helper instead of hardcoded env
+  const tableId = useMemo(() => getTableId(), []);
 
   // --- CART STATE ---
   const [cart, setCart] = useState<CartItem[]>([]);
@@ -94,7 +124,6 @@ function MomotaroApp() {
         const loaderOptions = {
           baseUrl: CLOUDFRONT_URL,
           shouldLoadMinDeps: true,
-          // ✅ CRITICAL FIX: This tells the library "I already have the config, don't look for the default file"
           shouldLoadConfigFromJsonFile: false, 
           config: configJson
         };
@@ -126,7 +155,7 @@ function MomotaroApp() {
     };
     document.body.appendChild(script);
     loaderScriptAdded = true;
-  }, []);
+  }, [appMode]);
 
   // --- SET INITIAL CATEGORY ---
   useEffect(() => {
@@ -214,7 +243,6 @@ function MomotaroApp() {
           name: item.menuItem.name,
           quantity: item.quantity,
           price: item.finalPrice,
-          // ✅ FIX: Send selected options so backend can calculate add-on prices
           selectedOptions: item.selectedOptions 
         })),
       })

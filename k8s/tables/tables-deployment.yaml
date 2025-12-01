@@ -1,0 +1,40 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: table-app
+  labels:
+    app: table-app
+spec:
+  # Scale this based on traffic, not number of tables.
+  # 2 replicas is fine to start for High Availability.
+  replicas: 2 
+  selector:
+    matchLabels:
+      app: table-app
+  template:
+    metadata:
+      labels:
+        app: table-app
+    spec:
+      containers:
+      - name: table-app
+        image: ghcr.io/kchenfs/tableai:latest
+        ports:
+        - containerPort: 80
+        env:
+        # We keep the static variables, but removed TABLE_ID
+        - name: VITE_API_URL_MENU
+          value: "https://your-api-url.com" 
+        # ... add other non-table-specific envs here
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: table-service
+spec:
+  type: ClusterIP
+  selector:
+    app: table-app
+  ports:
+  - port: 80
+    targetPort: 80

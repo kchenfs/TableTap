@@ -1,0 +1,51 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: table-service
+  labels:
+    app: table-app
+spec:
+  ports:
+  - port: 80
+    name: http
+  # Headless Service: Creates DNS records for table-0, table-1, etc.
+  clusterIP: None
+  selector:
+    app: table-app
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: table
+spec:
+  serviceName: "table-service"
+  # Updated to 12. This creates table-0 through table-11.
+  # You can simply ignore table-0 in your routing logic.
+  replicas: 12
+  selector:
+    matchLabels:
+      app: table-app
+  template:
+    metadata:
+      labels:
+        app: table-app
+    spec:
+      containers:
+      - name: table-app
+        image: ghcr.io/kchenfs/tableai:latest 
+        ports:
+        - containerPort: 80
+          name: web
+        env:
+        # This injects the Pod Name (e.g. table-5) into the container environment.
+        # Use a startup script to write this to a config.js if the frontend needs it.
+        - name: VITE_TABLE_ID 
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
+        - name: OTEL_SERVICE_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
+        - name: OTEL_EXPORTER_OTLP_ENDPOINT
+          value: http://tabletap-monitor.taila459ef.ts.net:4317

@@ -1,19 +1,11 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 
-// Get the app mode and table ID from environment variables
-const appMode = process.env.VITE_APP_MODE || 'dine-in';
-const tableId = process.env.VITE_TABLE_ID || 'table-1';
-
-// Determine the base path
-// For dine-in, use /table-X/ as the base
-// For takeout, use / as the base
-const base = appMode === 'dine-in' ? `/${tableId}/` : '/';
-
-// https://vitejs.dev/config/
+// CLOUD FIX: We cannot bake the table ID into the base path anymore.
+// We set it to root '/' so this single image works for ANY table URL.
 export default defineConfig({
   plugins: [react()],
-  base: base,
+  base: '/', 
   server: {
     host: '0.0.0.0',
     port: 5173,
