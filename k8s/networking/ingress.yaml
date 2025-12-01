@@ -5,6 +5,8 @@ metadata:
   annotations:
     # Use the Traefik Ingress Class deployed by K3s
     kubernetes.io/ingress.class: "traefik"
+    # Optional: Force HTTP -> HTTPS redirect if you set up TLS later
+    # traefik.ingress.kubernetes.io/router.entrypoints: websecure
 spec:
   rules:
     # 1. TAKEOUT HOST: take-out.momotarosushi.ca
@@ -21,7 +23,7 @@ spec:
               number: 80
 
     # 2. DINE-IN HOST: dine-in.momotarosushi.ca
-    # The App.tsx sees the '/table-X' path and extracts the table ID.
+    # This single host handles 11 separate paths (/table-1/ through /table-11/).
   - host: dine-in.momotarosushi.ca
     http:
       paths:
