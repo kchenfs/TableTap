@@ -15,6 +15,9 @@ spec:
       - "--certificatesresolvers.le-staging.acme.email=kchenfs@gmail.com" # REPLACE THIS EMAIL
       - "--certificatesresolvers.le-staging.acme.storage=/data/acme.json"
       - "--certificatesresolvers.le-staging.acme.caserver=https://acme-staging-v02.api.letsencrypt.org/directory"
+      # --- FIX: Add the TLS Challenge ---
+      - "--certificatesresolvers.le-staging.acme.tlschallenge=true"
+      # -----------------------------------
       - "--entrypoints.websecure.address=:443"
       # Global redirection of HTTP (web) to HTTPS (websecure)
       - "--entrypoints.web.http.redirections.entrypoint.to=websecure"
