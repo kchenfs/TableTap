@@ -3,7 +3,7 @@ name: Build and Deploy to K3s
 on:
   push:
     branches:
-      - main
+      - k3smigration
   workflow_dispatch:
 
 env:
