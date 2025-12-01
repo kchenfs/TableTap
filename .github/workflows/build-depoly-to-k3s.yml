@@ -21,10 +21,17 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      # --- FIX: Force Lowercase Image Name ---
       - name: Lowercase Repository Name
         run: |
           echo "IMAGE_NAME=${GITHUB_REPOSITORY,,}" >> $GITHUB_ENV
+
+      # --- FIX 1: Enable QEMU for ARM builds ---
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+
+      # --- FIX 2: Enable Docker Buildx ---
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
 
       - name: Log in to the Container registry
         uses: docker/login-action@v3
@@ -33,15 +40,13 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
-
       - name: Build and push Docker image
         uses: docker/build-push-action@v5
         with:
           context: .
           push: true
-          # Use the lowercased env variable here
+          # --- FIX 3: Build for ARM64 (Oracle Cloud) AND AMD64 (Standard) ---
+          platforms: linux/amd64,linux/arm64
           tags: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
           build-args: |
             VITE_API_URL_MENU=${{ secrets.VITE_API_URL_MENU }}
@@ -62,7 +67,6 @@ jobs:
     - name: Checkout repository
       uses: actions/checkout@v4
 
-    # 1. COPY FILES: This replaces 'git pull'. It copies local 'k8s' folder to remote server.
     - name: Copy K8s manifests to Server
       uses: appleboy/scp-action@v0.1.7
       with:
@@ -72,19 +76,14 @@ jobs:
         source: "k8s/"
         target: "/home/${{ secrets.SERVER_USER }}/TableTap"
 
-    # 2. RUN COMMANDS: Now that files are there, apply them.
-    #- name: Apply K8s Manifests
-     # uses: appleboy/ssh-action@v1.0.3
-      #with:
-       # host: ${{ secrets.SERVER_HOST }}
-       # username: ${{ secrets.SERVER_USER }}
-        #key: ${{ secrets.SSH_PRIVATE_KEY }}
-       # script: |
-          # Go to the folder where we just copied the files
-         # cd ~/TableTap
-          
-          # Apply the manifests
-         # kubectl apply -f k8s/tables/
-          
-          # Restart the pods to pick up the new Docker Image we just pushed
-        #  kubectl rollout restart deployment/table-app
+    # Uncommented this so it runs automatically for you
+    - name: Apply K8s Manifests
+      uses: appleboy/ssh-action@v1.0.3
+      with:
+        host: ${{ secrets.SERVER_HOST }}
+        username: ${{ secrets.SERVER_USER }}
+        key: ${{ secrets.SSH_PRIVATE_KEY }}
+        script: |
+          cd ~/TableTap
+          kubectl apply -f k8s/tables/
+          kubectl rollout restart deployment/tabletap-app
