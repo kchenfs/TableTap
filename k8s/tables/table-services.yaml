@@ -32,7 +32,7 @@ spec:
     spec:
       containers:
       - name: table-app
-        image: ghcr.io/kchenfs/tableai:latest 
+        image: ghcr.io/kchenfs/tabletap:latest 
         ports:
         - containerPort: 80
           name: web

@@ -5,9 +5,8 @@ metadata:
   labels:
     app: table-app
 spec:
-  # Scale this based on traffic, not number of tables.
-  # 2 replicas is fine to start for High Availability.
-  replicas: 2 
+  # Start with 2 replicas for high availability
+  replicas: 2
   selector:
     matchLabels:
       app: table-app
@@ -18,14 +17,18 @@ spec:
     spec:
       containers:
       - name: table-app
-        image: ghcr.io/kchenfs/tableai:latest
+        # Make sure this matches your GHCR package name EXACTLY (lowercase)
+        image: ghcr.io/kchenfs/tabletap:latest
+        imagePullPolicy: Always # Forces K8s to check for a new image on restart
         ports:
         - containerPort: 80
         env:
-        # We keep the static variables, but removed TABLE_ID
-        - name: VITE_API_URL_MENU
-          value: "https://your-api-url.com" 
-        # ... add other non-table-specific envs here
+        # These variables are injected into the container environment.
+        # NOTE: Your React app can't see these directly unless your Dockerfile
+        # writes them to window.ENV (like we did for TABLE_ID).
+        # Typically, these are baked in at BUILD time via ARG in Dockerfile.
+        # But keeping them here is good documentation.
+  
 ---
 apiVersion: v1
 kind: Service

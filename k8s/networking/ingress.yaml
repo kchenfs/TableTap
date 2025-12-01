@@ -1,0 +1,32 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: table-ingress
+  annotations:
+    # This tells Traefik (K3s default) to handle this
+    kubernetes.io/ingress.class: "traefik"
+spec:
+  rules:
+  # Rule 1: Catch traffic for table-1.test.local
+  - host: table-1.test.local
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: table-service # This must match your Service name
+            port:
+              number: 80
+  
+  # Rule 2: Catch traffic for table-2.test.local
+  - host: table-2.test.local
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: table-service
+            port:
+              number: 80
