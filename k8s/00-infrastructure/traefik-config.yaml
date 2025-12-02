@@ -7,12 +7,12 @@ spec:
   valuesContent: |-
     ports:
       websecure:
-        port: 8443
+        port: 443
         expose: true
         exposedPort: 443
         protocol: TCP
       web:
-        port: 8000
+        port: 80
         expose: true
         exposedPort: 80
         protocol: TCP
@@ -26,7 +26,7 @@ spec:
       - "--certificatesresolvers.le-staging.acme.storage=/data/acme.json"
       - "--certificatesresolvers.le-staging.acme.caserver=https://acme-staging-v02.api.letsencrypt.org/directory"
       - "--certificatesresolvers.le-staging.acme.tlschallenge=true"
-      - "--entrypoints.websecure.address=:8443"
+      - "--entrypoints.websecure.address=:443"
       - "--entrypoints.web.address=:8000"
       - "--entrypoints.web.http.redirections.entrypoint.to=websecure"
       - "--entrypoints.web.http.redirections.entrypoint.scheme=https"

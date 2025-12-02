@@ -1,0 +1,13 @@
+apiVersion: v1
+kind: Service
+metadata:
+  # This name is crucial for the Ingress to target
+  name: tabletap-service
+spec:
+  # Type: ClusterIP is mandatory when using an Ingress controller like Traefik
+  type: ClusterIP
+  selector:
+    app: tabletap
+  ports:
+  - port: 80
+    targetPort: 80 # This is the containerPort (Nginx default)
