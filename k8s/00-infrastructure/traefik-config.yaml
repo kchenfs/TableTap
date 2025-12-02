@@ -5,7 +5,7 @@ metadata:
   namespace: kube-system
 spec:
   valuesContent: |-
-    # 1. Enable Persistence (Saves your certs to disk so they survive restarts)
+    # 1. Persistence: Save certificates so they survive restarts
     persistence:
       enabled: true
       storageClass: "local-path"
@@ -13,35 +13,21 @@ spec:
       size: 100Mi
       path: /data
 
-    # 2. Port Configuration (Maps 8000->80 and 8443->443)
+    # 2. Ports: Simplified to avoid the "Bool/Map" error
+    # We only override the "exposedPort" (Service Layer)
+    # We let Traefik handle the internal container ports automatically
     ports:
       web:
-        port: 8000
-        expose: true
         exposedPort: 80
-        protocol: TCP
       websecure:
-        port: 8443
-        expose: true
         exposedPort: 443
-        protocol: TCP
     
-    # 3. System Stability (Keep Traefik running even if node is busy)
-    tolerations:
-      - key: CriticalAddonsOnly
-        operator: Exists
-
-    # 4. Let's Encrypt Arguments (Staging Mode)
+    # 3. Arguments: Your Let's Encrypt Staging settings
     additionalArguments:
-      # Email for expiry notifications
       - "--certificatesresolvers.le-staging.acme.email=kchenfs@gmail.com"
-      # Where to save the file (Must match persistence path above)
       - "--certificatesresolvers.le-staging.acme.storage=/data/acme.json"
-      # The CA Server (STAGING - Generates Fake Certs first)
       - "--certificatesresolvers.le-staging.acme.caserver=https://acme-staging-v02.api.letsencrypt.org/directory"
-      # Use the TLS Challenge (Verifies via Port 443)
       - "--certificatesresolvers.le-staging.acme.tlschallenge=true"
-      
-      # Global Redirect: Force everyone from HTTP to HTTPS
+      # Global Redirect to HTTPS
       - "--entrypoints.web.http.redirections.entrypoint.to=websecure"
       - "--entrypoints.web.http.redirections.entrypoint.scheme=https"
