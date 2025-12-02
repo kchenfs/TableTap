@@ -9,7 +9,6 @@ metadata:
     traefik.ingress.kubernetes.io/router.tls.certresolver: "le-staging"
 spec:
   rules:
-  # RULE A: TAKEOUT HOST
   - host: take-out.momotarosushi.ca
     http:
       paths:
@@ -21,89 +20,11 @@ spec:
             port:
               number: 80
 
-  # RULE B: DINE-IN HOST (WITH PATH STRIPPING)
   - host: dine-in.momotarosushi.ca
     http:
       paths:
-      - path: /table-1
-        pathType: Prefix
-        backend:
-          service:
-            name: tabletap-service
-            port:
-              number: 80
-      - path: /table-2
-        pathType: Prefix
-        backend:
-          service:
-            name: tabletap-service
-            port:
-              number: 80
-      - path: /table-3
-        pathType: Prefix
-        backend:
-          service:
-            name: tabletap-service
-            port:
-              number: 80
-      - path: /table-4
-        pathType: Prefix
-        backend:
-          service:
-            name: tabletap-service
-            port:
-              number: 80
-      - path: /table-5
-        pathType: Prefix
-        backend:
-          service:
-            name: tabletap-service
-            port:
-              number: 80
-      - path: /table-6
-        pathType: Prefix
-        backend:
-          service:
-            name: tabletap-service
-            port:
-              number: 80
-      - path: /table-7
-        pathType: Prefix
-        backend:
-          service:
-            name: tabletap-service
-            port:
-              number: 80
-      - path: /table-8
-        pathType: Prefix
-        backend:
-          service:
-            name: tabletap-service
-            port:
-              number: 80
-      - path: /table-9
-        pathType: Prefix
-        backend:
-          service:
-            name: tabletap-service
-            port:
-              number: 80
-      - path: /table-10
-        pathType: Prefix
-        backend:
-          service:
-            name: tabletap-service
-            port:
-              number: 80
-      - path: /table-11
-        pathType: Prefix
-        backend:
-          service:
-            name: tabletap-service
-            port:
-              number: 80
       - path: /
-        pathType: Exact
+        pathType: Prefix
         backend:
           service:
             name: tabletap-service
