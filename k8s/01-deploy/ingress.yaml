@@ -6,7 +6,7 @@ metadata:
   annotations:
     kubernetes.io/ingress.class: "traefik"
     traefik.ingress.kubernetes.io/router.tls: "true"
-    traefik.ingress.kubernetes.io/router.tls.certresolver: "le-staging"
+    traefik.ingress.kubernetes.io/router.tls.certresolver: "le-prod"
 spec:
   rules:
   - host: take-out.momotarosushi.ca
@@ -31,8 +31,5 @@ spec:
             port:
               number: 80
   
-  tls:
-    - secretName: momotaro-tls-staging
-      hosts:
-        - take-out.momotarosushi.ca
-        - dine-in.momotarosushi.ca
+  # Remove or comment out the tls section entirely
+  # Let ACME handle certificate creation automatically

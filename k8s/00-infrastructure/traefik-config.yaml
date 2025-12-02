@@ -24,9 +24,11 @@ spec:
     
     # 3. Arguments: Your Let's Encrypt Staging settings
     additionalArguments:
-      - "--certificatesresolvers.le-staging.acme.email=kchenfs@gmail.com"
-      - "--certificatesresolvers.le-staging.acme.storage=/data/acme.json"
-      - "--certificatesresolvers.le-staging.acme.tlschallenge=true"
+      - "--log.level=DEBUG"  # <--- ADD THIS LINE (Must be first or early in the list)
+      - "--certificatesresolvers.le-prod.acme.email=kchenfs@gmail.com"
+      - "--certificatesresolvers.le-prod.acme.storage=/data/acme-prod.json"
+      - "--certificatesresolvers.le-prod.acme.tlschallenge=true"
+      - "--certificatesresolvers.le-prod.acme.caserver=https://acme-v02.api.letsencrypt.org/directory"
       # Global Redirect to HTTPS
       - "--entrypoints.web.http.redirections.entrypoint.to=websecure"
       - "--entrypoints.web.http.redirections.entrypoint.scheme=https"
