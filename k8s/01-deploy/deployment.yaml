@@ -22,11 +22,33 @@ spec:
         imagePullPolicy: Always
         ports:
         - containerPort: 80
-        env:
-        # Variables that are static across ALL deployments (Takeout or Dine-in)
-        # We are only setting a placeholder here for VITE_APP_MODE. The App.tsx 
-        # now overrides this based on the hostname.
-        - name: VITE_APP_MODE
-          value: "dine-in" 
-        - name: VITE_API_URL_MENU
-          value: "https://your-api-url.com" # Placeholder: Replace with your actual menu API URI
+        
+        # Liveness Probe: Checks if the app is alive
+        # If this fails 3 times, Kubernetes will restart the pod
+        livenessProbe:
+          httpGet:
+            path: /  # Your app serves content at root, so this should work
+            port: 80
+            httpHeaders:
+            - name: Host
+              value: localhost  # In case your app checks the Host header
+          initialDelaySeconds: 30  # Wait 30s after container starts
+          periodSeconds: 10        # Check every 10 seconds
+          timeoutSeconds: 5        # Wait 5s for response
+          failureThreshold: 3      # Restart after 3 failed checks
+          successThreshold: 1      # Consider healthy after 1 success
+        
+        # Readiness Probe: Checks if the app is ready to receive traffic
+        # If this fails, Kubernetes stops sending traffic to this pod (but doesn't restart it)
+        readinessProbe:
+          httpGet:
+            path: /
+            port: 80
+            httpHeaders:
+            - name: Host
+              value: localhost
+          initialDelaySeconds: 10  # Start checking after 10s
+          periodSeconds: 5         # Check every 5 seconds
+          timeoutSeconds: 3        # Wait 3s for response
+          failureThreshold: 3      # Mark unready after 3 failed checks
+          successThreshold: 1      # Mark ready after 1 success
