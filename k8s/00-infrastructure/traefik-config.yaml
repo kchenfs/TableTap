@@ -26,7 +26,6 @@ spec:
     additionalArguments:
       - "--certificatesresolvers.le-staging.acme.email=kchenfs@gmail.com"
       - "--certificatesresolvers.le-staging.acme.storage=/data/acme.json"
-      - "--certificatesresolvers.le-staging.acme.caserver=https://acme-staging-v02.api.letsencrypt.org/directory"
       - "--certificatesresolvers.le-staging.acme.tlschallenge=true"
       # Global Redirect to HTTPS
       - "--entrypoints.web.http.redirections.entrypoint.to=websecure"
