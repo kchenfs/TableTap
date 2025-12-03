@@ -2,12 +2,11 @@ apiVersion: tailscale.com/v1alpha1
 kind: Connector
 metadata:
   name: alloy-egress
-  namespace: tailscale  # Connectors should be in tailscale namespace
+  namespace: tailscale
 spec:
   subnetRouter:
     advertiseRoutes:
-      - "100.64.0.0/10"  # Tailscale CGNAT range
-  # Add this section:
+      - "100.64.0.0/10" 
   env:
     - name: TS_ACCEPT_DNS
       value: "true"
