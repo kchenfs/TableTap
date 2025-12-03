@@ -80,5 +80,7 @@ jobs:
         script: |
           export KUBECONFIG=~/.kube/config
           cd ~/TableTap
-          kubectl apply -f k8s/tables/
+          kubectl apply -f k8s/00-infrastructure/
+          kubectl apply -f k8s/01-deploy/
+          kubectl apply -f k8s/02-monitor
           kubectl rollout restart deployment/tabletap-app

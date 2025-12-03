@@ -1,0 +1,50 @@
+alloy:
+  configMap:
+    create: true
+    # This is where we define the "Pipeline" (The River Config)
+    content: |
+      logging {
+        level = "info"
+        format = "logfmt"
+      }
+
+      // 1. DISCOVERY: Find all pods on the cluster
+      discovery.kubernetes "pods" {
+        role = "pod"
+      }
+
+      // 2. METRICS: Scrape metrics from pods
+      prometheus.scrape "pods" {
+        targets    = discovery.kubernetes.pods.targets
+        forward_to = [prometheus.remote_write.mimir.receiver]
+      }
+
+      // 3. LOGS: Tail logs from the pods found
+      loki.source.kubernetes "pods" {
+        targets    = discovery.kubernetes.pods.targets
+        forward_to = [loki.write.lgtm.receiver]
+      }
+
+      // 4. EXPORT METRICS: Send to your Monitor Server (Mimir/Prometheus)
+      prometheus.remote_write "mimir" {
+        endpoint {
+          url = "http://tabletap-monitor.taila459ef.ts.net:9009/api/v1/push"
+        }
+      }
+
+      // 5. EXPORT LOGS: Send to your Monitor Server (Loki)
+      loki.write "lgtm" {
+        endpoint {
+          url = "http://tabletap-monitor.taila459ef.ts.net:3100/loki/api/v1/push"
+        }
+      }
+
+# Controller settings to ensure it runs on every node
+controller:
+  type: daemonset
+
+# K3s Specific Mounts: K3s puts logs in /var/log/pods and /var/lib/rancher/k3s/agent/containerd
+# The Helm chart needs permission to read these.
+mounts:
+  varlog: true
+  dockercontainers: true
