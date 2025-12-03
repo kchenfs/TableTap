@@ -80,7 +80,19 @@ jobs:
         script: |
           export KUBECONFIG=~/.kube/config
           cd ~/TableTap
+          
+          # 1. Infrastructure (Traefik/Cert Manager) - Standard Manifests
           kubectl apply -f k8s/00-infrastructure/
+          
+          # 2. Application (Deployment/Service/Ingress) - Standard Manifests
           kubectl apply -f k8s/01-deploy/
-          kubectl apply -f k8s/02-monitor
+          
+          # 3. Monitoring (Alloy) - HELM UPGRADE
+          # We use the values file we uploaded to the server
+          helm upgrade --install alloy grafana/alloy \
+            --namespace monitoring \
+            --create-namespace \
+            --values k8s/02-monitor/alloy-values.yaml
+          
+          # 4. Force Restart (Required because we are using 'latest' tag)
           kubectl rollout restart deployment/tabletap-app
