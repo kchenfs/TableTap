@@ -1,0 +1,9 @@
+apiVersion: tailscale.com/v1alpha1
+kind: Connector
+metadata:
+  name: alloy-egress
+  namespace: monitoring  # Change this to match where your Alloy pods run
+spec:
+  subnetRouter:
+    advertiseRoutes:
+      - "100.64.0.0/10"  # Tailscale's CGNAT range - allows access to entire tailnet

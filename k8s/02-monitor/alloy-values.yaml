@@ -35,11 +35,7 @@ alloy:
 
 controller:
   type: daemonset
-  # --- ADD THESE TWO LINES ---
-  # This gives the pod the "glasses" to see the Host's network (Tailscale)
-  hostNetwork: true
-  # This tells K8s: "Try to find DNS in the cluster first; if you fail, ask the Host."
-  dnsPolicy: Default
+  
 
 mounts:
   varlog: true
