@@ -11,6 +11,50 @@ alloy:
         role = "pod"
       }
 
+      // --- LOGGING PIPELINE (LOKI) ---
+      
+      // 1. New Relabeling specifically for Logs
+      // This extracts metadata so you can search by {app="tabletap"}
+      discovery.relabel "pod_logs" {
+        targets = discovery.kubernetes.pods.targets
+
+        // Map Kubernetes meta-labels to actual Loki labels
+        rule {
+          source_labels = ["__meta_kubernetes_namespace"]
+          action = "replace"
+          target_label = "namespace"
+        }
+        rule {
+          source_labels = ["__meta_kubernetes_pod_name"]
+          action = "replace"
+          target_label = "pod"
+        }
+        rule {
+          source_labels = ["__meta_kubernetes_pod_container_name"]
+          action = "replace"
+          target_label = "container"
+        }
+        rule {
+          source_labels = ["__meta_kubernetes_pod_label_app"]
+          action = "replace"
+          target_label = "app"
+        }
+      }
+
+      // 2. Send the RELABELED targets to Loki
+      loki.source.kubernetes "pods" {
+        targets    = discovery.relabel.pod_logs.output
+        forward_to = [loki.write.lgtm.receiver]
+      }
+
+      loki.write "lgtm" {
+        endpoint {
+          url = "http://lgtm-proxy.monitoring.svc.cluster.local:3100/loki/api/v1/push"
+        }
+      }
+
+      // --- METRICS PIPELINE (MIMIR) ---
+      
       discovery.relabel "pods" {
         targets = discovery.kubernetes.pods.targets
 
@@ -30,25 +74,14 @@ alloy:
       }
 
       prometheus.scrape "pods" {
-        # Notice we point to the RELABEL output, not the raw discovery
+        // Notice we point to the RELABEL output, not the raw discovery
         targets    = discovery.relabel.pods.output
         forward_to = [prometheus.remote_write.mimir.receiver]
-      }
-
-      loki.source.kubernetes "pods" {
-        targets    = discovery.kubernetes.pods.targets
-        forward_to = [loki.write.lgtm.receiver]
       }
 
       prometheus.remote_write "mimir" {
         endpoint {
           url = "http://lgtm-proxy.monitoring.svc.cluster.local:9009/api/v1/push"
-        }
-      }
-
-      loki.write "lgtm" {
-        endpoint {
-          url = "http://lgtm-proxy.monitoring.svc.cluster.local:3100/loki/api/v1/push"
         }
       }
 
