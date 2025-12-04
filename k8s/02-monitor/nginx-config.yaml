@@ -1,0 +1,23 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: nginx-config
+  namespace: default
+data:
+  default.conf: |
+    server {
+        listen 80;
+        root   /usr/share/nginx/html;
+        index  index.html index.htm;
+
+        location / {
+            try_files $uri $uri/ /index.html;
+        }
+
+        # This is the secret internal page for metrics
+        location /stub_status {
+            stub_status;
+            allow 127.0.0.1; # Only allow the sidecar to see this
+            deny all;
+        }
+    }
