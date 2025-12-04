@@ -3,7 +3,7 @@ alloy:
     create: true
     content: |
       logging {
-        level = "info"
+        level = "debug"
         format = "logfmt"
       }
 
