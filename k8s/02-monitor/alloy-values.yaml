@@ -14,14 +14,13 @@ alloy:
       prometheus.scrape "pods" {
         targets    = discovery.kubernetes.pods.targets
         forward_to = [prometheus.remote_write.mimir.receiver]
-
+        
         rule {
           source_labels = ["__meta_kubernetes_pod_annotation_k8s_grafana_com_scrape"]
           action        = "keep"
           regex         = "true"
         }
         
-        # Use the specific port defined in the annotation (9113)
         rule {
           source_labels = ["__address__", "__meta_kubernetes_pod_annotation_k8s_grafana_com_metrics_port"]
           action        = "replace"
@@ -29,7 +28,6 @@ alloy:
           replacement   = "$1:$2"
           target_label  = "__address__"
         }
-      }
       }
 
       loki.source.kubernetes "pods" {
