@@ -1,15 +1,20 @@
-apiVersion: tailscale.com/v1alpha1
-kind: ProxyClass
+apiVersion: v1
+kind: Service
 metadata:
-  name: alloy-egress
+  name: lgtm-proxy
+  namespace: monitoring
+  annotations:
+    # This magic annotation tells the Operator: 
+    # "Create a proxy pod that forwards traffic to this Tailscale machine"
+    tailscale.com/tailnet-fqdn: "tabletap-monitor.taila459ef.ts.net"
 spec:
-  statefulSet:
-    labels:
-      app: alloy-egress-proxy
-      type: egress
-    pod:
-      tailscaleContainer:
-        env:
-          # This is the key setting for MagicDNS
-          - name: TS_ACCEPT_DNS
-            value: "true"
+  type: ClusterIP
+  ports:
+    - name: loki
+      port: 3100
+      targetPort: 3100
+      protocol: TCP
+    - name: mimir
+      port: 9009
+      targetPort: 9009
+      protocol: TCP

@@ -23,21 +23,18 @@ alloy:
 
       prometheus.remote_write "mimir" {
         endpoint {
-          url = "http://tabletap-monitor.taila459ef.ts.net:9009/api/v1/push"
+          url = "http://lgtm-proxy.monitoring.svc.cluster.local:9009/api/v1/push"
         }
       }
 
       loki.write "lgtm" {
         endpoint {
-          url = "http://tabletap-monitor.taila459ef.ts.net:3100/loki/api/v1/push"
+          url = "http://lgtm-proxy.monitoring.svc.cluster.local:3100/loki/api/v1/push"
         }
       }
 
 controller:
   type: daemonset
-  # Add the Tailscale ProxyClass annotation
-  podAnnotations:
-    tailscale.com/proxy-class: "alloy-egress"
 
 mounts:
   varlog: true
