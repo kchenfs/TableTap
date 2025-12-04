@@ -35,7 +35,9 @@ alloy:
 
 controller:
   type: daemonset
-  
+  # Add the Tailscale ProxyClass annotation
+  podAnnotations:
+    tailscale.com/proxy-class: "alloy-egress"
 
 mounts:
   varlog: true

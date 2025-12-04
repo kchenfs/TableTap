@@ -1,0 +1,15 @@
+apiVersion: tailscale.com/v1alpha1
+kind: ProxyClass
+metadata:
+  name: alloy-egress
+spec:
+  statefulSet:
+    labels:
+      app: alloy-egress-proxy
+      type: egress
+    pod:
+      tailscaleContainer:
+        env:
+          # This is the key setting for MagicDNS
+          - name: TS_ACCEPT_DNS
+            value: "true"
