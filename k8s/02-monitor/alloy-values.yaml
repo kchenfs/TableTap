@@ -11,16 +11,15 @@ alloy:
         role = "pod"
       }
 
-      prometheus.scrape "pods" {
-        targets    = discovery.kubernetes.pods.targets
-        forward_to = [prometheus.remote_write.mimir.receiver]
-        
+      discovery.relabel "pods" {
+        targets = discovery.kubernetes.pods.targets
+
         rule {
           source_labels = ["__meta_kubernetes_pod_annotation_k8s_grafana_com_scrape"]
           action        = "keep"
           regex         = "true"
         }
-        
+
         rule {
           source_labels = ["__address__", "__meta_kubernetes_pod_annotation_k8s_grafana_com_metrics_port"]
           action        = "replace"
@@ -28,6 +27,12 @@ alloy:
           replacement   = "$1:$2"
           target_label  = "__address__"
         }
+      }
+
+      prometheus.scrape "pods" {
+        # Notice we point to the RELABEL output, not the raw discovery
+        targets    = discovery.relabel.pods.output
+        forward_to = [prometheus.remote_write.mimir.receiver]
       }
 
       loki.source.kubernetes "pods" {
