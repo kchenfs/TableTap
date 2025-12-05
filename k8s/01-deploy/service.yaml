@@ -1,0 +1,19 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: tabletap-service
+  namespace: default
+  # Add this label if your Alloy configuration looks for it
+  labels:
+    app: tabletap
+spec:
+  type: ClusterIP
+  selector:
+    app: tabletap
+  ports:
+    - name: web
+      port: 80
+      targetPort: 80
+    - name: metrics
+      port: 9113       # Alloy will scrape this port
+      targetPort: 9113

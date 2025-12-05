@@ -1,0 +1,35 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: momotaro-ingress
+  namespace: default
+  annotations:
+    kubernetes.io/ingress.class: "traefik"
+    traefik.ingress.kubernetes.io/router.tls: "true"
+    traefik.ingress.kubernetes.io/router.tls.certresolver: "le-prod"
+spec:
+  rules:
+  - host: take-out.momotarosushi.ca
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: tabletap-service
+            port:
+              number: 80
+
+  - host: dine-in.momotarosushi.ca
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: tabletap-service
+            port:
+              number: 80
+  
+  # Remove or comment out the tls section entirely
+  # Let ACME handle certificate creation automatically

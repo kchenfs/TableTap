@@ -1,0 +1,34 @@
+apiVersion: helm.cattle.io/v1
+kind: HelmChartConfig
+metadata:
+  name: traefik
+  namespace: kube-system
+spec:
+  valuesContent: |-
+    # 1. Persistence: Save certificates so they survive restarts
+    persistence:
+      enabled: true
+      storageClass: "local-path"
+      accessMode: ReadWriteOnce
+      size: 100Mi
+      path: /data
+
+    # 2. Ports: Simplified to avoid the "Bool/Map" error
+    # We only override the "exposedPort" (Service Layer)
+    # We let Traefik handle the internal container ports automatically
+    ports:
+      web:
+        exposedPort: 80
+      websecure:
+        exposedPort: 443
+    
+    # 3. Arguments: Your Let's Encrypt Staging settings
+    additionalArguments:
+      - "--log.level=DEBUG"  # <--- ADD THIS LINE (Must be first or early in the list)
+      - "--certificatesresolvers.le-prod.acme.email=kchenfs@gmail.com"
+      - "--certificatesresolvers.le-prod.acme.storage=/data/acme-prod.json"
+      - "--certificatesresolvers.le-prod.acme.tlschallenge=true"
+      - "--certificatesresolvers.le-prod.acme.caserver=https://acme-v02.api.letsencrypt.org/directory"
+      # Global Redirect to HTTPS
+      - "--entrypoints.web.http.redirections.entrypoint.to=websecure"
+      - "--entrypoints.web.http.redirections.entrypoint.scheme=https"
