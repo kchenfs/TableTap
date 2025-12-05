@@ -40,7 +40,9 @@ jobs:
           context: .
           push: true
           platforms: linux/arm64
-          tags: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
+          tags: |
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ github.sha }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
           build-args: |
@@ -62,6 +64,23 @@ jobs:
     - name: Checkout repository
       uses: actions/checkout@v4
 
+    # FIX 1: Calculate lowercase name again for the Deploy job
+    - name: Lowercase Repository Name
+      run: |
+        echo "IMAGE_NAME=${GITHUB_REPOSITORY,,}" >> $GITHUB_ENV
+
+    # FIX 2: Corrected 'sed' command
+    # - Uses ${{ env.IMAGE_NAME }} to ensure lowercase matches the build
+    # - Updates the file inside 'k8s/01-deploy/' (matching your apply step)
+    - name: Update Deployment YAML with Commit SHA
+      run: |
+        # Replace 'latest' with the specific SHA
+        # Ensure 'k8s/01-deploy/deployment.yaml' is the actual path to your file!
+        sed -i "s|ghcr.io/${{ env.IMAGE_NAME }}:latest|ghcr.io/${{ env.IMAGE_NAME }}:${{ github.sha }}|g" k8s/01-deploy/deployment.yaml
+        
+        # Verify the change
+        cat k8s/01-deploy/deployment.yaml | grep "image:"
+
     - name: Copy K8s manifests to Server
       uses: appleboy/scp-action@v0.1.7
       with:
@@ -81,18 +100,17 @@ jobs:
           export KUBECONFIG=~/.kube/config
           cd ~/TableTap
           
-          # 1. Infrastructure (Traefik/Cert Manager) - Standard Manifests
+          # 1. Infrastructure
           kubectl apply -f k8s/00-infrastructure/
           
-          # 2. Application (Deployment/Service/Ingress) - Standard Manifests
+          # 2. Application 
+          # This now contains the NEW tag, so K8s restarts automatically!
           kubectl apply -f k8s/01-deploy/
           
-          # 3. Monitoring (Alloy) - HELM UPGRADE
-          # We use the values file we uploaded to the server
+          # 3. Monitoring
           helm upgrade --install alloy grafana/alloy \
             --namespace monitoring \
             --create-namespace \
             --values k8s/02-monitor/alloy-values.yaml
           
-          # 4. Force Restart (Required because we are using 'latest' tag)
-          kubectl rollout restart deployment/tabletap-app
+          # REMOVED: kubectl rollout restart (Not needed anymore!)
