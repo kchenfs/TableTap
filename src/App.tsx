@@ -114,45 +114,56 @@ function MomotaroApp() {
   useEffect(() => {
     const CLOUDFRONT_URL = "https://d2ibqiw1xziqq9.cloudfront.net";
     
-    // Wait for the loader to be available (loaded from index.html)
     const initializeChatbot = async () => {
-      if (!window.ChatBotUiLoader) {
-        console.warn("ChatBotUiLoader not yet available, retrying...");
-        setTimeout(initializeChatbot, 100);
-        return;
-      }
+  if (!window.ChatBotUiLoader) {
+    console.warn("ChatBotUiLoader not yet available, retrying...");
+    setTimeout(initializeChatbot, 100);
+    return;
+  }
 
-      try {
-        // 1. Determine which config file to use based on app mode
-        let configFileName = "lex-web-ui-loader-config-dinein.json";
-        if (appMode === 'takeout') {
-          configFileName = "lex-web-ui-loader-config-takeout.json";
-        }
+  try {
+    // 1. Determine which config file to use based on app mode
+    let configFileName = "lex-web-ui-loader-config-dinein.json";
+    if (appMode === 'takeout') {
+      configFileName = "lex-web-ui-loader-config-takeout.json";
+    }
 
-        // 2. Fetch the config file
-        const response = await fetch(`${CLOUDFRONT_URL}/${configFileName}`);
-        if (!response.ok) throw new Error(`Failed to load config: ${configFileName}`);
-        const configJson = await response.json();
-        
-        // 3. Create loader options with the fetched config
-        const loaderOptions = {
-          baseUrl: CLOUDFRONT_URL,
-          shouldLoadMinDeps: true,
-          shouldLoadConfigFromJsonFile: false,
-          config: configJson
-        };
-
-        // 4. Initialize the iframe loader
-        const iframeLoader = new window.ChatBotUiLoader.IframeLoader(loaderOptions);
-        
-        // 5. Load the chatbot (no overrides - use config file as-is)
-        await iframeLoader.load();
-        
-        console.log("Chatbot loaded successfully for mode:", appMode);
-      } catch (err) {
-        console.error("Chatbot initialization error:", err);
+    // 2. Fetch the config file
+    const response = await fetch(`${CLOUDFRONT_URL}/${configFileName}`);
+    if (!response.ok) throw new Error(`Failed to load config: ${configFileName}`);
+    const configJson = await response.json();
+    
+    // 3. Flatten and merge into loaderOptions (key change here)
+    const loaderOptions = {
+      baseUrl: configJson.loader.baseUrl,
+      shouldLoadMinDeps: true,
+      shouldLoadConfigFromJsonFile: false,
+      
+      // Pull iframe fields to root level
+      iframeOrigin: configJson.iframe.iframeOrigin,
+      iframeSrcPath: configJson.iframe.iframeSrcPath,
+      shouldLoadIframeMinimized: configJson.iframe.shouldLoadIframeMinimized,
+      
+      // Set the UI-specific config (lex, cognito, etc.)
+      config: {
+        region: configJson.region,
+        cognito: configJson.cognito,
+        lex: configJson.lex,
+        ui: configJson.ui,
       }
     };
+
+    // 4. Initialize the iframe loader
+    const iframeLoader = new window.ChatBotUiLoader.IframeLoader(loaderOptions);
+    
+    // 5. Load the chatbot
+    await iframeLoader.load();
+    
+    console.log("Chatbot loaded successfully for mode:", appMode);
+  } catch (err) {
+    console.error("Chatbot initialization error:", err);
+  }
+};
 
     initializeChatbot();
   }, [appMode]); // Re-initialize if app mode changes
