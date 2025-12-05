@@ -9,6 +9,7 @@ on:
       - 'src/**'
       - 'Dockerfile'
       - 'dist/**'
+      - '.github/workflows/Build-Deploy-K3-Chatbot-Assets.yml'
   workflow_dispatch:
 
 env:
