@@ -5,7 +5,6 @@ on:
     branches:
       - k3smigration
     paths:
-      # Trigger if ANY of these change
       - 'k8s/**'
       - 'src/**'
       - 'Dockerfile'
@@ -17,7 +16,6 @@ env:
 
 jobs:
   # JOB 1: DETECT CHANGES
-  # This job checks which files were modified in this commit
   changes:
     runs-on: ubuntu-latest
     outputs:
@@ -38,7 +36,6 @@ jobs:
               - 'dist/**'
 
   # JOB 2: BUILD AND DEPLOY K3S
-  # Only runs if 'k3s' files changed
   deploy-k3s:
     needs: changes
     if: ${{ needs.changes.outputs.k3s == 'true' }}
@@ -51,7 +48,6 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      # 1. SETUP & BUILD
       - name: Lowercase Repository Name
         run: echo "IMAGE_NAME=${GITHUB_REPOSITORY,,}" >> $GITHUB_ENV
 
@@ -87,10 +83,9 @@ jobs:
             VITE_LEX_BOT_LOCALE_ID=${{ secrets.VITE_LEX_BOT_LOCALE_ID }}
             VITE_STRIPE_PUBLISHABLE_KEY=${{ secrets.VITE_STRIPE_PUBLISHABLE_KEY }}
 
-      # 2. DEPLOY TO SERVER (Using the 'sed' fix we created)
       - name: Update Deployment YAML with Commit SHA
         run: |
-          # Ensure this path matches your repo structure exactly
+          # Inject SHA into the deployment file
           sed -i "s|ghcr.io/${{ env.IMAGE_NAME }}:latest|ghcr.io/${{ env.IMAGE_NAME }}:${{ github.sha }}|g" k8s/01-deploy/deployment.yaml
 
       - name: Copy K8s manifests to Server
@@ -111,13 +106,16 @@ jobs:
           script: |
             export KUBECONFIG=~/.kube/config
             cd ~/TableTap
+            
             kubectl apply -f k8s/00-infrastructure/
             kubectl apply -f k8s/01-deploy/
             helm upgrade --install alloy grafana/alloy --namespace monitoring --create-namespace --values k8s/02-monitor/alloy-values.yaml
+            
+            # --- CRITICAL SAFETY CHECK ---
+            echo "Verifying rollout..."
+            kubectl rollout status deployment/tabletap-app --timeout=120s
 
   # JOB 3: DEPLOY CHATBOT ASSETS
-  # Runs if 'chatbot' files changed.
-  # WAITS for K3s, but runs even if K3s was skipped.
   deploy-chatbot:
     needs: [changes, deploy-k3s]
     runs-on: ubuntu-latest
@@ -125,10 +123,7 @@ jobs:
       id-token: write
       contents: read
     
-    # THE LOGIC: 
-    # 1. Always check condition (don't auto-fail if previous job skipped)
-    # 2. Only run if chatbot files changed
-    # 3. Ensure K3s job didn't FAIL (Skipped or Success is fine)
+    # Run if chatbot changed, AND k3s didn't fail (skipped is ok)
     if: |
       always() && 
       needs.changes.outputs.chatbot == 'true' && 
