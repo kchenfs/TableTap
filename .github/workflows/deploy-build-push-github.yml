@@ -6,7 +6,6 @@ on:
   push:
     branches:
       - feature/take-stripe-integration
-      - k3smigration
   workflow_dispatch:
 
 jobs:
