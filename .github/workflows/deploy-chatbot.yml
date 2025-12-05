@@ -6,7 +6,8 @@ name: Deploy Chatbot Assets to S3/CloudFront
 on:
   push:
     branches:
-      - feature/take-stripe-integration # Or 'master', 'production', etc.
+      - feature/take-stripe-integration
+      - k3smigration
     
   
   # Allows you to run this workflow manually from the Actions tab

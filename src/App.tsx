@@ -47,8 +47,6 @@ if (!STRIPE_KEY) {
 // Pass the variable (or an empty string to prevent crash if missing)
 const stripePromise = loadStripe(STRIPE_KEY || '');
 
-let loaderScriptAdded = false;
-
 // --- DYNAMIC MODE/ID HELPER FUNCTIONS ---
 
 // 1. Determines the App Mode based on the hostname.
@@ -112,65 +110,52 @@ function MomotaroApp() {
   const [clientSecret, setClientSecret] = useState<string | null>(null);
   const [isCheckoutModalOpen, setIsCheckoutModalOpen] = useState(false);
 
-  // --- CHATBOT LOADER ---
+  // --- CHATBOT LOADER (FIXED - NO DUPLICATE SCRIPT LOADING) ---
   useEffect(() => {
-    if (loaderScriptAdded) return;
     const CLOUDFRONT_URL = "https://d2ibqiw1xziqq9.cloudfront.net";
     
-    // 1. Determine which config file to use based on the derived appMode
-    let configFileName = "lex-web-ui-loader-config-dinein.json";
-    
-    if (appMode === 'takeout') {
-      configFileName = "lex-web-ui-loader-config-takeout.json";
-    }
+    // Wait for the loader to be available (loaded from index.html)
+    const initializeChatbot = async () => {
+      if (!window.ChatBotUiLoader) {
+        console.warn("ChatBotUiLoader not yet available, retrying...");
+        setTimeout(initializeChatbot, 100);
+        return;
+      }
 
-    const script = document.createElement('script');
-    script.src = `${CLOUDFRONT_URL}/lex-web-ui-loader.js`;
-    script.async = true;
-
-    script.onload = async () => {
-      if (!window.ChatBotUiLoader) return;
       try {
-        // 2. Manually fetch the correct config file
+        // 1. Determine which config file to use based on app mode
+        let configFileName = "lex-web-ui-loader-config-dinein.json";
+        if (appMode === 'takeout') {
+          configFileName = "lex-web-ui-loader-config-takeout.json";
+        }
+
+        // 2. Fetch the config file
         const response = await fetch(`${CLOUDFRONT_URL}/${configFileName}`);
-        if (!response.ok) throw new Error(`Failed to load config`);
+        if (!response.ok) throw new Error(`Failed to load config: ${configFileName}`);
         const configJson = await response.json();
         
+        // 3. Create loader options with the fetched config
         const loaderOptions = {
           baseUrl: CLOUDFRONT_URL,
           shouldLoadMinDeps: true,
-          shouldLoadConfigFromJsonFile: false, 
+          shouldLoadConfigFromJsonFile: false,
           config: configJson
         };
 
+        // 4. Initialize the iframe loader
         const iframeLoader = new window.ChatBotUiLoader.IframeLoader(loaderOptions);
-        const overrides = {
-          ui: {
-            parentOrigin: window.location.origin,
-            toolbarTitle: "Momotaro",
-            enableLogin: false,
-            closeOnFulfillment: true,
-          },
-          iframe: {
-            iframeOrigin: CLOUDFRONT_URL,
-            iframeSrcPath: `/index.html#/?lexWebUiEmbed=true`,
-            shouldLoadIframeMinimized: true
-          },
-          cognito: {
-            poolId: configJson.cognito.poolId,
-            region: configJson.cognito.region,
-            providerName: "cognito-identity.amazonaws.com"
-
-          }
-        };
-        iframeLoader.load(overrides).catch((err: any) => console.error("Chatbot load error:", err));
+        
+        // 5. Load the chatbot (no overrides - use config file as-is)
+        await iframeLoader.load();
+        
+        console.log("Chatbot loaded successfully for mode:", appMode);
       } catch (err) {
-        console.error("Chatbot config load error:", err);
+        console.error("Chatbot initialization error:", err);
       }
     };
-    document.body.appendChild(script);
-    loaderScriptAdded = true;
-  }, [appMode]);
+
+    initializeChatbot();
+  }, [appMode]); // Re-initialize if app mode changes
 
   // --- SET INITIAL CATEGORY ---
   useEffect(() => {
@@ -179,7 +164,7 @@ function MomotaroApp() {
     }
   }, [categories, activeCategory]);
 
-  // --- FILTER LOGIC (No changes) ---
+  // --- FILTER LOGIC ---
   const filteredCategories = useMemo(() => {
     if (!categories) return [];
     if (!searchTerm.trim()) return categories;
@@ -193,7 +178,7 @@ function MomotaroApp() {
     }).filter(category => category.items.length > 0);
   }, [categories, searchTerm]);
 
-  // --- SCROLL HANDLERS (No changes) ---
+  // --- SCROLL HANDLERS ---
   const handleScrollToCategory = (categoryId: string) => {
     setActiveCategory(categoryId);
     const element = document.getElementById(categoryId);
@@ -223,7 +208,7 @@ function MomotaroApp() {
     if (currentCategory) setActiveCategory(currentCategory);
   };
 
-  // --- CART ACTIONS (No changes) ---
+  // --- CART ACTIONS ---
   const handleAddToCart = (itemWithOptions: CartItem) => {
     setCart(prev => [...prev, itemWithOptions]);
     setSelectedItem(null);
@@ -246,7 +231,7 @@ function MomotaroApp() {
   }, [cart]);
 
 
-  // --- STRIPE INTENT (Takeout Logic uses new appMode) ---
+  // --- STRIPE INTENT (Takeout Logic) ---
   useEffect(() => {
     if (appMode === 'takeout' && total > 0) {
       const PAYMENT_API_URL = import.meta.env.VITE_PAYMENT_API_URL || "https://097zxtivqd.execute-api.ca-central-1.amazonaws.com/PROD/create-payment-intent";
@@ -268,7 +253,7 @@ function MomotaroApp() {
     }
   }, [total, cart, appMode]); 
 
-  // --- CHECKOUT BUTTON CLICK HANDLER (Uses new appMode/tableId) ---
+  // --- CHECKOUT BUTTON CLICK HANDLER ---
   const handleCheckout = async () => {
     setIsCheckingOut(true);
 
@@ -305,12 +290,10 @@ function MomotaroApp() {
           orderDate: new Date().toISOString(),
           order_id: nanoid(5).toUpperCase(),
           notes: orderNote || '',
-          // ✅ Use the dynamically derived tableId (e.g., 'table-11')
           table: tableId, 
           orderType: appMode,
         };
 
-        // Note: I removed alert() as per instructions, assuming you have a custom modal or toast
         await axios.post(TableTapUrl, orderData, { headers });
 
         setCart([]);
@@ -362,7 +345,6 @@ function MomotaroApp() {
           {appMode === 'dine-in' && (
             <div className="hidden lg:block py-6 border-b border-slate-800 mb-6">
               <h1 className="text-3xl font-bold text-white">
-                {/* Display table number, stripping "table-" prefix */}
                 Welcome to Table {tableId?.replace('table-', '')} 
               </h1>
             </div>
