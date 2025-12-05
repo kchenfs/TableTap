@@ -3,7 +3,7 @@ name: Build and Deploy to K3s
 on:
   push:
     branches:
-      - k3smigration
+      - DONE
     paths:
       - 'k8s/**'
       - '.github/workflows/build-depoly-to-k3s.yml'  

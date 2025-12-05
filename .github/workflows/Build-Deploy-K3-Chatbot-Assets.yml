@@ -1,0 +1,157 @@
+name: Production Pipeline (K3s & Chatbot)
+
+on:
+  push:
+    branches:
+      - k3smigration
+    paths:
+      # Trigger if ANY of these change
+      - 'k8s/**'
+      - 'src/**'
+      - 'Dockerfile'
+      - 'dist/**'
+  workflow_dispatch:
+
+env:
+  REGISTRY: ghcr.io
+
+jobs:
+  # JOB 1: DETECT CHANGES
+  # This job checks which files were modified in this commit
+  changes:
+    runs-on: ubuntu-latest
+    outputs:
+      k3s: ${{ steps.filter.outputs.k3s }}
+      chatbot: ${{ steps.filter.outputs.chatbot }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dorny/paths-filter@v2
+        id: filter
+        with:
+          filters: |
+            k3s:
+              - 'k8s/**'
+              - 'src/**'
+              - 'Dockerfile'
+              - '.github/workflows/production-pipeline.yml'
+            chatbot:
+              - 'dist/**'
+
+  # JOB 2: BUILD AND DEPLOY K3S
+  # Only runs if 'k3s' files changed
+  deploy-k3s:
+    needs: changes
+    if: ${{ needs.changes.outputs.k3s == 'true' }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # 1. SETUP & BUILD
+      - name: Lowercase Repository Name
+        run: echo "IMAGE_NAME=${GITHUB_REPOSITORY,,}" >> $GITHUB_ENV
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to Container registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          push: true
+          platforms: linux/arm64
+          tags: |
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ github.sha }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          build-args: |
+            VITE_API_URL_MENU=${{ secrets.VITE_API_URL_MENU }}
+            VITE_API_KEY=${{ secrets.VITE_API_KEY }}
+            VITE_TABLE_TAP_URL=${{ secrets.VITE_TABLE_TAP_URL }}
+            VITE_API_GATEWAY_URL=${{ secrets.VITE_API_GATEWAY_URL }}
+            VITE_COGNITO_POOL_ID=${{ secrets.VITE_COGNITO_POOL_ID }}
+            VITE_LEX_BOT_ID=${{ secrets.VITE_LEX_BOT_ID }}
+            VITE_LEX_BOT_ALIAS_ID=${{ secrets.VITE_LEX_BOT_ALIAS_ID }}
+            VITE_LEX_BOT_LOCALE_ID=${{ secrets.VITE_LEX_BOT_LOCALE_ID }}
+            VITE_STRIPE_PUBLISHABLE_KEY=${{ secrets.VITE_STRIPE_PUBLISHABLE_KEY }}
+
+      # 2. DEPLOY TO SERVER (Using the 'sed' fix we created)
+      - name: Update Deployment YAML with Commit SHA
+        run: |
+          # Ensure this path matches your repo structure exactly
+          sed -i "s|ghcr.io/${{ env.IMAGE_NAME }}:latest|ghcr.io/${{ env.IMAGE_NAME }}:${{ github.sha }}|g" k8s/01-deploy/deployment.yaml
+
+      - name: Copy K8s manifests to Server
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.SERVER_HOST }}
+          username: ${{ secrets.SERVER_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          source: "k8s/"
+          target: "/home/${{ secrets.SERVER_USER }}/TableTap"
+
+      - name: Apply K8s Manifests
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.SERVER_HOST }}
+          username: ${{ secrets.SERVER_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
+            export KUBECONFIG=~/.kube/config
+            cd ~/TableTap
+            kubectl apply -f k8s/00-infrastructure/
+            kubectl apply -f k8s/01-deploy/
+            helm upgrade --install alloy grafana/alloy --namespace monitoring --create-namespace --values k8s/02-monitor/alloy-values.yaml
+
+  # JOB 3: DEPLOY CHATBOT ASSETS
+  # Runs if 'chatbot' files changed.
+  # WAITS for K3s, but runs even if K3s was skipped.
+  deploy-chatbot:
+    needs: [changes, deploy-k3s]
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
+    
+    # THE LOGIC: 
+    # 1. Always check condition (don't auto-fail if previous job skipped)
+    # 2. Only run if chatbot files changed
+    # 3. Ensure K3s job didn't FAIL (Skipped or Success is fine)
+    if: |
+      always() && 
+      needs.changes.outputs.chatbot == 'true' && 
+      (needs.deploy-k3s.result == 'success' || needs.deploy-k3s.result == 'skipped')
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_IAM_ROLE_FOR_OIDC_ARN }}
+          aws-region: ca-central-1
+
+      - name: Sync ./dist folder with S3 bucket
+        run: |
+          aws s3 sync ./dist s3://momotaro-chatbot-assets \
+            --delete \
+            --cache-control "public, max-age=31536000, immutable"
+
+      - name: Create CloudFront invalidation
+        run: |
+          aws cloudfront create-invalidation \
+            --distribution-id E1U7V8A4IFQBCD \
+            --paths "/*"

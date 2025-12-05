@@ -6,10 +6,11 @@ name: Deploy Chatbot Assets to S3/CloudFront
 on:
   push:
     branches:
-      - feature/take-stripe-integration
-      - k3smigration
+      - DONE
     paths:
     - 'dist/**'
+    - '.github/workflows/deploy-chatbot.yml
+    - 'src/**'
     
   
   # Allows you to run this workflow manually from the Actions tab

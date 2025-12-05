@@ -18,8 +18,9 @@
     "enableLogin": false,
     "closeOnFulfillment": true
   },
-  "iframeSrcPath": "/index.html#/?lexWebUiEmbed=true",
   "iframe": {
+    "iframeOrigin": "https://d2ibqiw1xziqq9.cloudfront.net",
+    "iframeSrcPath": "/index.html#/?lexWebUiEmbed=true",
     "shouldLoadIframeMinimized": true
   },
   "loader": {
