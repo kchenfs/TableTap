@@ -4,6 +4,9 @@ on:
   push:
     branches:
       - k3smigration
+    paths:
+      - 'k8s/**'
+      - '.github/workflows/build-depoly-to-k3s.yml'  
   workflow_dispatch:
 
 env:

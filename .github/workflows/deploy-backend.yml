@@ -7,6 +7,9 @@ on:
     branches:
       - feature/take-stripe-integration
       - k3smigration
+    paths:
+      - 'lambda-function/**'
+      - '.github/workflows/deploy-backend.yml'
 
 jobs:
   deploy:
