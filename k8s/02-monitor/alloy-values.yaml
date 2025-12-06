@@ -11,9 +11,12 @@ alloy:
         role = "pod"
       }
 
-      // NEW: Discover Kubernetes Services for Traefik
-      discovery.kubernetes "services" {
-        role = "service"
+      // Discover Traefik pods
+      discovery.kubernetes "traefik_pods" {
+        role = "pod"
+        namespaces {
+          names = ["kube-system"]
+        }
       }
 
       // --- LOGGING PIPELINE (LOKI) ---
@@ -87,24 +90,18 @@ alloy:
         }
       }
 
-      // NEW: Service metrics for Traefik
+      // Relabel Traefik pods for metrics scraping
       discovery.relabel "traefik" {
-        targets = discovery.kubernetes.services.targets
+        targets = discovery.kubernetes.traefik_pods.targets
 
-        // Only scrape the Traefik service in kube-system
+        // Only keep Traefik pods
         rule {
-          source_labels = ["__meta_kubernetes_service_name"]
+          source_labels = ["__meta_kubernetes_pod_label_app_kubernetes_io_name"]
           action        = "keep"
           regex         = "traefik"
         }
 
-        rule {
-          source_labels = ["__meta_kubernetes_namespace"]
-          action        = "keep"
-          regex         = "kube-system"
-        }
-
-        // Set the address to the metrics port
+        // Point to metrics port
         rule {
           source_labels = ["__address__"]
           action        = "replace"
@@ -113,18 +110,17 @@ alloy:
           target_label  = "__address__"
         }
 
-        // Add namespace label
+        // Add labels
         rule {
           source_labels = ["__meta_kubernetes_namespace"]
           action = "replace"
           target_label = "namespace"
         }
 
-        // Add service name label
         rule {
-          source_labels = ["__meta_kubernetes_service_name"]
+          source_labels = ["__meta_kubernetes_pod_name"]
           action = "replace"
-          target_label = "service"
+          target_label = "pod"
         }
       }
 
@@ -133,10 +129,11 @@ alloy:
         forward_to = [prometheus.remote_write.mimir.receiver]
       }
 
-      // NEW: Scrape Traefik metrics
+      // Scrape Traefik metrics
       prometheus.scrape "traefik" {
-        targets    = discovery.relabel.traefik.output
-        forward_to = [prometheus.remote_write.mimir.receiver]
+        targets         = discovery.relabel.traefik.output
+        forward_to      = [prometheus.remote_write.mimir.receiver]
+        scrape_interval = "30s"
       }
 
       prometheus.remote_write "mimir" {
