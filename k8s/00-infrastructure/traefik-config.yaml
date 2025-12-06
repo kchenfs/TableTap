@@ -14,17 +14,19 @@ spec:
       path: /data
 
     # 2. Ports: Simplified to avoid the "Bool/Map" error
-    # We only override the "exposedPort" (Service Layer)
-    # We let Traefik handle the internal container ports automatically
     ports:
       web:
         exposedPort: 80
       websecure:
         exposedPort: 443
+      metrics:
+        port: 9100        # Internal container port
+        exposedPort: 9100 # Service port
+        expose: false     # Don't expose externally
     
-    # 3. Arguments: Your Let's Encrypt Staging settings
+    # 3. Arguments: Your Let's Encrypt + Prometheus settings
     additionalArguments:
-      - "--log.level=DEBUG"  # <--- ADD THIS LINE (Must be first or early in the list)
+      - "--log.level=DEBUG"
       - "--certificatesresolvers.le-prod.acme.email=kchenfs@gmail.com"
       - "--certificatesresolvers.le-prod.acme.storage=/data/acme-prod.json"
       - "--certificatesresolvers.le-prod.acme.tlschallenge=true"
@@ -32,3 +34,6 @@ spec:
       # Global Redirect to HTTPS
       - "--entrypoints.web.http.redirections.entrypoint.to=websecure"
       - "--entrypoints.web.http.redirections.entrypoint.scheme=https"
+      # Prometheus Metrics
+      - "--metrics.prometheus=true"
+      - "--metrics.prometheus.entrypoint=metrics"

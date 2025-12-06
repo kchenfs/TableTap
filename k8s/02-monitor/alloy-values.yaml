@@ -11,14 +11,16 @@ alloy:
         role = "pod"
       }
 
+      // NEW: Discover Kubernetes Services for Traefik
+      discovery.kubernetes "services" {
+        role = "service"
+      }
+
       // --- LOGGING PIPELINE (LOKI) ---
       
-      // 1. New Relabeling specifically for Logs
-      // This extracts metadata so you can search by {app="tabletap"}
       discovery.relabel "pod_logs" {
         targets = discovery.kubernetes.pods.targets
 
-        // Map Kubernetes meta-labels to actual Loki labels
         rule {
           source_labels = ["__meta_kubernetes_namespace"]
           action = "replace"
@@ -41,7 +43,6 @@ alloy:
         }
       }
 
-      // 2. Send the RELABELED targets to Loki
       loki.source.kubernetes "pods" {
         targets    = discovery.relabel.pod_logs.output
         forward_to = [loki.write.lgtm.receiver]
@@ -55,6 +56,7 @@ alloy:
 
       // --- METRICS PIPELINE (MIMIR) ---
       
+      // Pod metrics (your existing nginx exporter)
       discovery.relabel "pods" {
         targets = discovery.kubernetes.pods.targets
 
@@ -71,11 +73,69 @@ alloy:
           replacement   = "$1:$2"
           target_label  = "__address__"
         }
+
+        rule {
+          source_labels = ["__meta_kubernetes_namespace"]
+          action = "replace"
+          target_label = "namespace"
+        }
+
+        rule {
+          source_labels = ["__meta_kubernetes_pod_name"]
+          action = "replace"
+          target_label = "pod"
+        }
+      }
+
+      // NEW: Service metrics for Traefik
+      discovery.relabel "traefik" {
+        targets = discovery.kubernetes.services.targets
+
+        // Only scrape the Traefik service in kube-system
+        rule {
+          source_labels = ["__meta_kubernetes_service_name"]
+          action        = "keep"
+          regex         = "traefik"
+        }
+
+        rule {
+          source_labels = ["__meta_kubernetes_namespace"]
+          action        = "keep"
+          regex         = "kube-system"
+        }
+
+        // Set the address to the metrics port
+        rule {
+          source_labels = ["__address__"]
+          action        = "replace"
+          regex         = "([^:]+)(?::\\d+)?"
+          replacement   = "$1:9100"
+          target_label  = "__address__"
+        }
+
+        // Add namespace label
+        rule {
+          source_labels = ["__meta_kubernetes_namespace"]
+          action = "replace"
+          target_label = "namespace"
+        }
+
+        // Add service name label
+        rule {
+          source_labels = ["__meta_kubernetes_service_name"]
+          action = "replace"
+          target_label = "service"
+        }
       }
 
       prometheus.scrape "pods" {
-        // Notice we point to the RELABEL output, not the raw discovery
         targets    = discovery.relabel.pods.output
+        forward_to = [prometheus.remote_write.mimir.receiver]
+      }
+
+      // NEW: Scrape Traefik metrics
+      prometheus.scrape "traefik" {
+        targets    = discovery.relabel.traefik.output
         forward_to = [prometheus.remote_write.mimir.receiver]
       }
 
