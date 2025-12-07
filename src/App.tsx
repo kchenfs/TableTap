@@ -133,18 +133,13 @@ function MomotaroApp() {
         if (!response.ok) throw new Error(`Failed to load config: ${configFileName}`);
         const configJson = await response.json();
         
-        // 3. Create loader options - iframeSrcPath must be at root level
+        // 3. Create loader options - pass full config with nested structure
         const loaderOptions = {
           baseUrl: configJson.loader.baseUrl,
           shouldLoadMinDeps: true,
           shouldLoadConfigFromJsonFile: false,
           
-          // Flatten iframe fields to root level - this is what IframeLoader expects
-          iframeOrigin: configJson.iframe.iframeOrigin,
-          iframeSrcPath: configJson.iframe.iframeSrcPath,
-          shouldLoadIframeMinimized: configJson.iframe.shouldLoadIframeMinimized,
-          
-          // Full config goes in 'config' property
+          // Pass the full config - IframeLoader validates config.iframe.iframeSrcPath
           config: configJson
         };
 
