@@ -1,4 +1,4 @@
-name: Production Pipeline (K3s & Chatbot)
+name: Production Pipeline (GitOps)
 
 on:
   push:
@@ -9,7 +9,7 @@ on:
       - 'src/**'
       - 'Dockerfile'
       - 'dist/**'
-      - '.github/workflows/Build-Deploy-K3-Chatbot-Assets.yml'
+      - '.github/workflows/**'
   workflow_dispatch:
 
 env:
@@ -32,22 +32,23 @@ jobs:
               - 'k8s/**'
               - 'src/**'
               - 'Dockerfile'
-              - '.github/workflows/production-pipeline.yml'
             chatbot:
               - 'dist/**'
 
-  # JOB 2: BUILD AND DEPLOY K3S
-  deploy-k3s:
+  # JOB 2: BUILD DOCKER & UPDATE GIT REPO
+  build-and-update-git:
     needs: changes
     if: ${{ needs.changes.outputs.k3s == 'true' }}
     runs-on: ubuntu-latest
     permissions:
-      contents: read
-      packages: write
+      contents: write # REQUIRED: Allows the job to push commits back to the repo
+      packages: write # REQUIRED: Allows the job to push to GHCR
     
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Lowercase Repository Name
         run: echo "IMAGE_NAME=${GITHUB_REPOSITORY,,}" >> $GITHUB_ENV
@@ -67,10 +68,10 @@ jobs:
         with:
           context: .
           push: true
-          platforms: linux/arm64
+          platforms: linux/amd64,linux/arm64
           tags: |
-            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
             ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ github.sha }}
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
           cache-from: type=gha
           cache-to: type=gha,mode=max
           build-args: |
@@ -84,52 +85,74 @@ jobs:
             VITE_LEX_BOT_LOCALE_ID=${{ secrets.VITE_LEX_BOT_LOCALE_ID }}
             VITE_STRIPE_PUBLISHABLE_KEY=${{ secrets.VITE_STRIPE_PUBLISHABLE_KEY }}
 
-      - name: Update Deployment YAML with Commit SHA
+      - name: Update Deployment YAML with New Image Tag
         run: |
-          # Inject SHA into the deployment file
-          sed -i "s|ghcr.io/${{ env.IMAGE_NAME }}:latest|ghcr.io/${{ env.IMAGE_NAME }}:${{ github.sha }}|g" k8s/01-deploy/deployment.yaml
+          # Use sed to replace the 'image:' line in deployment.yaml
+          # It finds whatever tag is currently there and replaces it with the new Commit SHA
+          sed -i "s|image: ghcr.io/${{ env.IMAGE_NAME }}:.*|image: ghcr.io/${{ env.IMAGE_NAME }}:${{ github.sha }}|g" k8s/01-deploy/deployment.yaml
+          
+          # Print the file change to verify it worked
+          echo "Verifying change:"
+          grep "image:" k8s/01-deploy/deployment.yaml
 
-      - name: Copy K8s manifests to Server
-        uses: appleboy/scp-action@v0.1.7
-        with:
-          host: ${{ secrets.SERVER_HOST }}
-          username: ${{ secrets.SERVER_USER }}
-          key: ${{ secrets.SSH_PRIVATE_KEY }}
-          source: "k8s/"
-          target: "/home/${{ secrets.SERVER_USER }}/TableTap"
+      - name: Commit and Push Changes
+        run: |
+          # 1. Configure the "bot" user
+          git config --global user.name "GitHub Actions"
+          git config --global user.email "actions@github.com"
+          
+          # 2. Stage the modified file
+          git add k8s/01-deploy/deployment.yaml
+          
+          # 3. Check if there are changes and Commit
+          # [skip ci] is crucial: it prevents this commit from triggering the pipeline again!
+          if [[ -n $(git status -s) ]]; then
+            git commit -m "chore(ci): update k8s image tag to ${{ github.sha }} [skip ci]"
+            git push origin HEAD:k3smigration
+          else
+            echo "No changes to commit"
+          fi
 
-      - name: Apply K8s Manifests
+
+          # --- NEW JOB: THE GATEKEEPER ---
+  wait-for-rollout:
+    needs: build-and-update-git
+    if: ${{ needs.build-and-update-git.result == 'success' }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Wait for ArgoCD to Sync and Pods to be Ready
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ secrets.SERVER_HOST }}
           username: ${{ secrets.SERVER_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
+          timeout: 300s # Wait up to 5 minutes
           script: |
-            export KUBECONFIG=~/.kube/config
-            cd ~/TableTap
+            echo "⚡ Poking ArgoCD to sync immediately..."
             
-            kubectl apply -f k8s/00-infrastructure/
-            kubectl apply -f k8s/01-deploy/
-            helm upgrade --install alloy grafana/alloy --namespace monitoring --create-namespace --values k8s/02-monitor/alloy-values.yaml
+            # 1. The Magic Command: Force a "Hard Refresh"
+            # This sets an annotation that tells ArgoCD to fetch from Git instantly.
+            # Replace 'momotaro-backend' with your exact App name from the ArgoCD dashboard.
+            sudo k3s kubectl patch application momotaro-backend -n argocd --type merge -p '{"metadata": {"annotations": {"argocd.argoproj.io/refresh": "hard"}}}'
             
-            # --- CRITICAL SAFETY CHECK ---
-            echo "Verifying rollout..."
-            kubectl rollout status deployment/tabletap-app --timeout=120s
-
-  # JOB 3: DEPLOY CHATBOT ASSETS
+            echo "⏳ Waiting for rollout..."
+            
+            # 2. Wait for the App to actually update
+            sudo k3s kubectl rollout status deployment/tabletap-app -n default --timeout=180s
+            
+            echo "✅ Sync complete & Pods are stable."
+  # JOB 3: DEPLOY CHATBOT ASSETS (Unchanged)
   deploy-chatbot:
-    needs: [changes, deploy-k3s]
+    needs: [changes, build-and-update-git]
+    if: |
+      always() && 
+      needs.changes.outputs.chatbot == 'true' && 
+      (needs.build-and-update-git.result == 'success' || needs.build-and-update-git.result == 'skipped')
     runs-on: ubuntu-latest
     permissions:
       id-token: write
       contents: read
     
-    # Run if chatbot changed, AND k3s didn't fail (skipped is ok)
-    if: |
-      always() && 
-      needs.changes.outputs.chatbot == 'true' && 
-      (needs.deploy-k3s.result == 'success' || needs.deploy-k3s.result == 'skipped')
-
     steps:
       - name: Check out repository
         uses: actions/checkout@v4
