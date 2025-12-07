@@ -142,12 +142,15 @@ function MomotaroApp() {
         const configJson = await response.json();
         console.log("🤖 [CHATBOT] Config loaded:", JSON.stringify(configJson, null, 2));
         
-        // 3. Create loader options
+        // 3. Create loader options - try passing as separate option
         const loaderOptions = {
           baseUrl: configJson.loader.baseUrl,
           shouldLoadMinDeps: true,
           shouldLoadConfigFromJsonFile: false,
-          config: configJson
+          // Try these at root level based on the validator code
+          iframeOrigin: configJson.iframe.iframeOrigin,
+          iframeSrcPath: configJson.iframe.iframeSrcPath,
+          shouldLoadIframeMinimized: configJson.iframe.shouldLoadIframeMinimized,
         };
         console.log("🤖 [CHATBOT] Loader options:", JSON.stringify(loaderOptions, null, 2));
 
@@ -155,10 +158,11 @@ function MomotaroApp() {
         console.log("🤖 [CHATBOT] Creating IframeLoader instance...");
         const iframeLoader = new window.ChatBotUiLoader.IframeLoader(loaderOptions);
         console.log("🤖 [CHATBOT] IframeLoader created:", iframeLoader);
+        console.log("🤖 [CHATBOT] IframeLoader config.iframe:", iframeLoader.config?.iframe);
         
-        // 5. Load the chatbot
-        console.log("🤖 [CHATBOT] Calling iframeLoader.load()...");
-        await iframeLoader.load();
+        // 5. Load with full config as parameter
+        console.log("🤖 [CHATBOT] Calling iframeLoader.load() with config...");
+        await iframeLoader.load(configJson);
         
         console.log("✅ [CHATBOT] Loaded successfully for mode:", appMode);
       } catch (err) {
