@@ -157,20 +157,24 @@ function MomotaroApp() {
         console.log("🤖 [CHATBOT] Loader options:", JSON.stringify(loaderOptions, null, 2));
 
         // 4. Initialize the iframe loader
-        console.log("🤖 [CHATBOT] Creating IframeLoader instance...");
-        const iframeLoader = new window.ChatBotUiLoader.IframeLoader(loaderOptions);
-        console.log("🤖 [CHATBOT] IframeLoader created:", iframeLoader);
-        console.log("🤖 [CHATBOT] IframeLoader config.iframe:", iframeLoader.config?.iframe);
-        
-        // 5. Load with full config as parameter
-        console.log("🤖 [CHATBOT] Calling iframeLoader.load() with config...");
-        await iframeLoader.load(configJson);
-        
-        console.log("✅ [CHATBOT] Loaded successfully for mode:", appMode);
-      } catch (err) {
-        console.error("❌ [CHATBOT] Initialization error:", err);
-        console.error("❌ [CHATBOT] Error stack:", err.stack);
-      }
+          console.log("🤖 [CHATBOT] Creating IframeLoader instance...");
+          const iframeLoader = new window.ChatBotUiLoader.IframeLoader(loaderOptions);
+          
+          // AT THIS POINT: config might be undefined because .load() hasn't run yet.
+          console.log("🤖 [CHATBOT] Config BEFORE load:", iframeLoader.config); 
+
+          // 5. Load with full config as parameter
+          console.log("🤖 [CHATBOT] Calling iframeLoader.load() with config...");
+          
+          // This is where the magic happens and config likely gets set
+          await iframeLoader.load(configJson); 
+          
+          // *** ADD THIS HERE ***
+          // Now that load is finished, the config should be visible
+          console.log("🤖 [CHATBOT] Config AFTER load:", iframeLoader.config); 
+          
+          console.log("✅ [CHATBOT] Loaded successfully for mode:", appMode);
+          }
     };
 
     initializeChatbot();
