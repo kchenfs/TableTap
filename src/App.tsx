@@ -142,12 +142,14 @@ function MomotaroApp() {
         const configJson = await response.json();
         console.log("🤖 [CHATBOT] Config loaded:", JSON.stringify(configJson, null, 2));
         
-        // 3. Create loader options - try passing as separate option
+        // 3. Create loader options - disable auto config loading
         const loaderOptions = {
           baseUrl: configJson.loader.baseUrl,
           shouldLoadMinDeps: true,
           shouldLoadConfigFromJsonFile: false,
-          // Try these at root level based on the validator code
+          shouldLoadConfigFromEvent: false,
+          shouldIgnoreConfigWhenEmbedded: false,
+          // Pass iframe settings at root
           iframeOrigin: configJson.iframe.iframeOrigin,
           iframeSrcPath: configJson.iframe.iframeSrcPath,
           shouldLoadIframeMinimized: configJson.iframe.shouldLoadIframeMinimized,
