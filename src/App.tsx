@@ -149,10 +149,11 @@ function MomotaroApp() {
           shouldLoadConfigFromJsonFile: false,
           shouldLoadConfigFromEvent: false,
           shouldIgnoreConfigWhenEmbedded: false,
-          // Pass iframe settings at root
-          iframeOrigin: configJson.iframe.iframeOrigin,
-          iframeSrcPath: configJson.iframe.iframeSrcPath,
-          shouldLoadIframeMinimized: configJson.iframe.shouldLoadIframeMinimized,
+          iframe: {
+            iframeOrigin: configJson.iframe.iframeOrigin,
+            iframeSrcPath: configJson.iframe.iframeSrcPath,
+            shouldLoadIframeMinimized: configJson.iframe.shouldLoadIframeMinimized,
+          },
         };
         console.log("🤖 [CHATBOT] Loader options:", JSON.stringify(loaderOptions, null, 2));
 
