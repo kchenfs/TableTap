@@ -146,8 +146,8 @@ function MomotaroApp() {
         const loaderOptions = {
           baseUrl: configJson.loader.baseUrl,
           shouldLoadMinDeps: true,
-          shouldLoadConfigFromJsonFile: true,
-          shouldLoadConfigFromEvent: true,
+          shouldLoadConfigFromJsonFile: false,
+          shouldLoadConfigFromEvent: false,
           shouldIgnoreConfigWhenEmbedded: false,
           // Pass iframe settings at root
           iframeOrigin: configJson.iframe.iframeOrigin,
