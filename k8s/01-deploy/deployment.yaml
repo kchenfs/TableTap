@@ -27,7 +27,7 @@ spec:
       containers:
       # --- MAIN CONTAINER (TableTap / Nginx) ---
       - name: tabletap
-        image: ghcr.io/kchenfs/tabletap:9f66d2d00dc821ae4ae46b66427d8c7db7c49bd6
+        image: ghcr.io/kchenfs/tabletap:a086be20f791f08067ae719577a168b21393171d
         imagePullPolicy: Always
         ports:
         - containerPort: 80
