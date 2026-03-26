@@ -1,10 +1,11 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 
-// https://vitejs.dev/config/
+// CLOUD FIX: We cannot bake the table ID into the base path anymore.
+// We set it to root '/' so this single image works for ANY table URL.
 export default defineConfig({
   plugins: [react()],
-  base: './', // Use relative paths for assets - fixes path-based routing issues
+  base: '/', 
   server: {
     host: '0.0.0.0',
     port: 5173,

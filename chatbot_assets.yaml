@@ -1,0 +1,128 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'Deploys a private S3 bucket and a CloudFront distribution to securely serve the chatbot static assets. INCLUDES CORS POLICY.'
+Parameters:
+  S3BucketName:
+    Type: String
+    Description: A globally unique name for the S3 bucket (e.g., momotarosushi-chatbot-assets).
+    Default: momotaro-chatbot-assets # Added default since you've created it
+
+Resources:
+  # 1. The S3 bucket (no changes)
+  AssetsBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Ref S3BucketName
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+
+  # 2. The CloudFront OAC (no changes)
+  CloudFrontOAC:
+    Type: AWS::CloudFront::OriginAccessControl
+    Properties:
+      OriginAccessControlConfig:
+        Name: !Sub 'OAC-for-${S3BucketName}'
+        OriginAccessControlOriginType: s3
+        SigningBehavior: always
+        SigningProtocol: sigv4
+
+  # 3. NEW: The Response Headers Policy to fix CORS
+  CloudFrontResponseHeadersPolicy:
+    Type: AWS::CloudFront::ResponseHeadersPolicy
+    Properties:
+      ResponseHeadersPolicyConfig:
+        Name: !Sub 'CORS-Policy-for-${S3BucketName}'
+        Comment: 'CORS policy to allow dine-in and take-out domains'
+        CorsConfig:
+          # This is the 'Access-Control-Allow-Origin' header
+          AccessControlAllowOrigins:
+            Items:
+              - 'https://dine-in.momotarosushi.ca'
+              - 'https://take-out.momotarosushi.ca'
+          # This is the 'Access-Control-Allow-Methods' header
+          AccessControlAllowMethods:
+            Items:
+              - GET
+              - HEAD
+              - OPTIONS
+          # This is the 'Access-Control-Allow-Headers' header
+          AccessControlAllowHeaders:
+            Items:
+              - '*' # Allow all headers
+          AccessControlAllowCredentials: false
+          AccessControlMaxAgeSec: 3600 # Cache preflight (OPTIONS) for 1 hour
+          OriginOverride: true
+  
+  # 4. The CloudFront Distribution (UPDATED)
+  CloudFrontDistribution:
+    Type: AWS::CloudFront::Distribution
+    Properties:
+      DistributionConfig:
+        Comment: !Sub 'CDN for ${S3BucketName}'
+        Enabled: true
+        HttpVersion: http2and3
+        Origins:
+          - Id: !Sub 'S3-Origin-${S3BucketName}'
+            DomainName: !GetAtt AssetsBucket.RegionalDomainName
+            OriginAccessControlId: !Ref CloudFrontOAC
+            S3OriginConfig:
+              OriginAccessIdentity: ''
+        DefaultCacheBehavior:
+          TargetOriginId: !Sub 'S3-Origin-${S3BucketName}'
+          ViewerProtocolPolicy: redirect-to-https
+          AllowedMethods:
+            - GET
+            - HEAD
+            - OPTIONS # <-- Must also allow OPTIONS for CORS
+          CachedMethods:
+            - GET
+            - HEAD
+            - OPTIONS # <-- Must also cache OPTIONS
+          Compress: true
+          ForwardedValues:
+            QueryString: false
+            Cookies:
+              Forward: none
+          DefaultTTL: 86400
+          MinTTL: 0
+          MaxTTL: 31536000
+          
+          # --- THIS IS THE NEW LINE THAT ATTACHES THE POLICY ---
+          ResponseHeadersPolicyId: !Ref CloudFrontResponseHeadersPolicy
+          
+        ViewerCertificate:
+          CloudFrontDefaultCertificate: true
+
+  # 5. S3 Bucket Policy (no changes)
+  AssetsBucketPolicy:
+    Type: AWS::S3::BucketPolicy
+    Properties:
+      Bucket: !Ref AssetsBucket
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Sid: 'AllowCloudFrontReadAccess'
+            Effect: Allow
+            Principal:
+              Service: cloudfront.amazonaws.com
+            Action: 's3:GetObject'
+            Resource: !Sub 'arn:aws:s3:::${S3BucketName}/*'
+            Condition:
+              StringEquals:
+                'AWS:SourceArn': !Sub 'arn:aws:cloudfront::${AWS::AccountId}:distribution/${CloudFrontDistribution}'
+
+Outputs:
+  BucketName:
+    Description: Name of the S3 bucket
+    Value: !Ref AssetsBucket
+  DistributionId:
+    Description: ID of the CloudFront distribution
+    Value: !Ref CloudFrontDistribution
+  DistributionDomainName:
+    Description: The default *.cloudfront.net domain name to use in your code
+    Value: !GetAtt CloudFrontDistribution.DomainName
+  BucketName:
+    Description: Name of the S3 bucket
+    Value: !Ref AssetsBucket

@@ -1,0 +1,59 @@
+# .github/workflows/deploy-backend.yml
+
+name: Deploy TableTap-OrderProcessing Lambda
+
+on:
+  push:
+    branches:
+      - feature/take-stripe-integration
+      - k3smigration
+    paths:
+      - 'lambda-function/**'
+      - '.github/workflows/deploy-backend.yml'
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    permissions:
+      id-token: write
+      contents: read
+
+    steps:
+      # Step 1: Checkout code
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # Step 2: Set up Python
+      - name: Set up Python 3.13
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.13'
+
+      # Step 3: Install dependencies into ./package
+      - name: Install dependencies
+        run: |
+          mkdir -p package
+          pip install -r lambda-function/requirements.txt -t package/
+
+      # Step 4: Copy Lambda source files into ./package
+      - name: Copy source files
+        run: |
+          cp lambda-function/*.py package/
+          cp lambda-function/*.html package/ || true
+
+      # Step 5: Configure AWS credentials
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_IAM_ROLE_FOR_OIDC_ARN }}
+          aws-region: ca-central-1
+
+      # Step 6: Deploy Lambda
+      - name: Deploy OrderProcessor Lambda
+        uses: aws-actions/aws-lambda-deploy@v1
+        with:
+          function-name: TableTap-OrderProcessing
+          code-artifacts-dir: ./package
+          runtime: python3.13
+          handler: lambda_function.lambda_handler

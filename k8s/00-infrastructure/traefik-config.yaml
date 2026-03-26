@@ -1,0 +1,39 @@
+apiVersion: helm.cattle.io/v1
+kind: HelmChartConfig
+metadata:
+  name: traefik
+  namespace: kube-system
+spec:
+  valuesContent: |-
+    # 1. Persistence: Save certificates so they survive restarts
+    persistence:
+      enabled: true
+      storageClass: "local-path"
+      accessMode: ReadWriteOnce
+      size: 100Mi
+      path: /data
+
+    # 2. Ports: Simplified to avoid the "Bool/Map" error
+    ports:
+      web:
+        exposedPort: 80
+      websecure:
+        exposedPort: 443
+      metrics:
+        port: 9100        # Internal container port
+        exposedPort: 9100 # Service port
+        expose: false     # Don't expose externally
+    
+    # 3. Arguments: Your Let's Encrypt + Prometheus settings
+    additionalArguments:
+      - "--log.level=DEBUG"
+      - "--certificatesresolvers.le-prod.acme.email=kchenfs@gmail.com"
+      - "--certificatesresolvers.le-prod.acme.storage=/data/acme-prod.json"
+      - "--certificatesresolvers.le-prod.acme.tlschallenge=true"
+      - "--certificatesresolvers.le-prod.acme.caserver=https://acme-v02.api.letsencrypt.org/directory"
+      # Global Redirect to HTTPS
+      - "--entrypoints.web.http.redirections.entrypoint.to=websecure"
+      - "--entrypoints.web.http.redirections.entrypoint.scheme=https"
+      # Prometheus Metrics
+      - "--metrics.prometheus=true"
+      - "--metrics.prometheus.entrypoint=metrics"

@@ -1,0 +1,119 @@
+name: Build and Deploy to K3s
+
+on:
+  push:
+    branches:
+      - DONE
+    paths:
+      - 'k8s/**'
+      - '.github/workflows/build-depoly-to-k3s.yml'  
+  workflow_dispatch:
+
+env:
+  REGISTRY: ghcr.io
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-24.04-arm
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Lowercase Repository Name
+        run: |
+          echo "IMAGE_NAME=${GITHUB_REPOSITORY,,}" >> $GITHUB_ENV
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to the Container registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          push: true
+          platforms: linux/arm64
+          tags: |
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ github.sha }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          build-args: |
+            VITE_API_URL_MENU=${{ secrets.VITE_API_URL_MENU }}
+            VITE_API_KEY=${{ secrets.VITE_API_KEY }}
+            VITE_TABLE_TAP_URL=${{ secrets.VITE_TABLE_TAP_URL }}
+            VITE_API_GATEWAY_URL=${{ secrets.VITE_API_GATEWAY_URL }}
+            VITE_COGNITO_POOL_ID=${{ secrets.VITE_COGNITO_POOL_ID }}
+            VITE_LEX_BOT_ID=${{ secrets.VITE_LEX_BOT_ID }}
+            VITE_LEX_BOT_ALIAS_ID=${{ secrets.VITE_LEX_BOT_ALIAS_ID }}
+            VITE_LEX_BOT_LOCALE_ID=${{ secrets.VITE_LEX_BOT_LOCALE_ID }}
+            VITE_STRIPE_PUBLISHABLE_KEY=${{ secrets.VITE_STRIPE_PUBLISHABLE_KEY }}
+
+  deploy-to-server:
+    needs: build-and-push
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    # FIX 1: Calculate lowercase name again for the Deploy job
+    - name: Lowercase Repository Name
+      run: |
+        echo "IMAGE_NAME=${GITHUB_REPOSITORY,,}" >> $GITHUB_ENV
+
+    # FIX 2: Corrected 'sed' command
+    # - Uses ${{ env.IMAGE_NAME }} to ensure lowercase matches the build
+    # - Updates the file inside 'k8s/01-deploy/' (matching your apply step)
+    - name: Update Deployment YAML with Commit SHA
+      run: |
+        # Replace 'latest' with the specific SHA
+        # Ensure 'k8s/01-deploy/deployment.yaml' is the actual path to your file!
+        sed -i "s|ghcr.io/${{ env.IMAGE_NAME }}:latest|ghcr.io/${{ env.IMAGE_NAME }}:${{ github.sha }}|g" k8s/01-deploy/deployment.yaml
+        
+        # Verify the change
+        cat k8s/01-deploy/deployment.yaml | grep "image:"
+
+    - name: Copy K8s manifests to Server
+      uses: appleboy/scp-action@v0.1.7
+      with:
+        host: ${{ secrets.SERVER_HOST }}
+        username: ${{ secrets.SERVER_USER }}
+        key: ${{ secrets.SSH_PRIVATE_KEY }}
+        source: "k8s/"
+        target: "/home/${{ secrets.SERVER_USER }}/TableTap"
+
+    - name: Apply K8s Manifests
+      uses: appleboy/ssh-action@v1.0.3
+      with:
+        host: ${{ secrets.SERVER_HOST }}
+        username: ${{ secrets.SERVER_USER }}
+        key: ${{ secrets.SSH_PRIVATE_KEY }}
+        script: |
+          export KUBECONFIG=~/.kube/config
+          cd ~/TableTap
+          
+          # 1. Infrastructure
+          kubectl apply -f k8s/00-infrastructure/
+          
+          # 2. Application 
+          # This now contains the NEW tag, so K8s restarts automatically!
+          kubectl apply -f k8s/01-deploy/
+          
+          # 3. Monitoring
+          helm upgrade --install alloy grafana/alloy \
+            --namespace monitoring \
+            --create-namespace \
+            --values k8s/02-monitor/alloy-values.yaml
+          
+          # REMOVED: kubectl rollout restart (Not needed anymore!)

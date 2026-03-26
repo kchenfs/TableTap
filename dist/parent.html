@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" type="image/png" href="data:image/png;base64,iVBORw0KGgo=">
+    <title>Chatbot UI iFrame</title>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
+  </head>
+  <body>
+    <div class="container-fluid">
+      <h1>Lex Chatbot UI Sample Parent Page</h1>
+      <p class="lead">
+        Use the chatbot UI to drive your bot. This page will dynamically
+        update using the associated Lex variables as the bot dialog progresses.
+      </p>
+
+      <div class="row">
+        <div class="col-md-6">
+          <div class="panel panel-primary">
+            <div class="panel-heading">Lex Dialog State</div>
+            <div class="panel-body">
+              <div>
+                <strong>dialogState:</strong>
+                <span id="dialog-state"></span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.2.1.min.js" integrity="sha256-hwg4gsxgFZhOsEEamdOYGBf13FyQuiTwlAQgxVSNgt4=" crossorigin="anonymous"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js" integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa" crossorigin="anonymous"></script>
+
+    <!-- CRITICAL: Use absolute CloudFront URL -->
+    <script src="https://d2ibqiw1xziqq9.cloudfront.net/lex-web-ui-loader.js"></script>
+
+    <script>
+      var loaderOpts = {
+        baseUrl: 'https://d2ibqiw1xziqq9.cloudfront.net/',
+        shouldLoadConfigFromEvent: true,
+        shouldLoadMinDeps: true,
+      };
+
+      var iframeLoader = new ChatBotUiLoader.IframeLoader(loaderOpts);
+
+      var chatbotUiconfig = {};
+
+      iframeLoader.load(chatbotUiconfig)
+        .then(function () {
+          console.log('✅ Iframe chatbot loaded successfully');
+          iframeLoader.api.ping();
+        })
+        .catch(function (error) {
+          console.error('❌ Iframe chatbot UI failed to load', error);
+        });
+
+      $(document).ready(function chatbotHandler() {
+        $(document).one('receivelexconfig', function onReceiveLexConfig() {
+          var localTimeZone;
+          try {
+            localTimeZone = JSON.stringify(
+              Intl.DateTimeFormat().resolvedOptions().timeZone
+            );
+          } catch (err) {
+            localTimeZone = JSON.stringify(
+              new Date().getTimezoneOffset()
+            );
+          }
+
+          var config = {
+            lex: {
+              sessionAttributes: {
+                localTimeZone: localTimeZone
+              }
+            }
+          };
+
+          var event = new CustomEvent('loadlexconfig', { detail: { config: config } });
+          document.dispatchEvent(event);
+        });
+
+        $(document).on('lexWebUiReady', function onUpdateLexState(evt) {
+          var event = new CustomEvent(
+            'lexWebUiMessage',
+            { detail: {message: {event: 'ping'} } }
+          );
+          document.dispatchEvent(event);
+        });
+
+        $(document).on('updatelexstate', function onUpdateLexState(evt) {
+          var dialogState = '';
+          if (evt && ('detail' in evt) && evt.detail && ('state' in evt.detail)) {
+            dialogState = evt.detail.state.dialogState || '';
+          }
+          $('#dialog-state').text(dialogState);
+        });
+      });
+    </script>
+  </body>
+</html>
