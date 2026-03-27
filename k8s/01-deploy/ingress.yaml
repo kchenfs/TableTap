@@ -4,10 +4,10 @@ metadata:
   name: momotaro-ingress
   namespace: default
   annotations:
-    kubernetes.io/ingress.class: "traefik"
     traefik.ingress.kubernetes.io/router.tls: "true"
     traefik.ingress.kubernetes.io/router.tls.certresolver: "le-prod"
 spec:
+  ingressClassName: traefik      # ← replaces the deprecated annotation
   rules:
   - host: take-out.momotarosushi.ca
     http:
@@ -19,7 +19,6 @@ spec:
             name: tabletap-service
             port:
               number: 80
-
   - host: dine-in.momotarosushi.ca
     http:
       paths:
@@ -30,6 +29,3 @@ spec:
             name: tabletap-service
             port:
               number: 80
-  
-  # Remove or comment out the tls section entirely
-  # Let ACME handle certificate creation automatically
