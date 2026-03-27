@@ -1,0 +1,33 @@
+# k8s/argocd/loki-app.yaml
+# Deploys Loki (log storage) into the monitoring namespace
+# NOTE: As of March 16 2026, OSS Loki chart moved to grafana-community/helm-charts
+# The old grafana/helm-charts repo now only serves Grafana Enterprise Logs (GEL)
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: loki
+  namespace: argocd
+spec:
+  project: default
+  sources:
+    # Source 1: Loki Helm chart from the NEW community repo
+    - repoURL: https://grafana-community.github.io/helm-charts
+      chart: loki
+      targetRevision: "6.55.0"
+      helm:
+        valueFiles:
+          - $values/k8s/02-monitor/loki/values.yaml
+    # Source 2: Our Git repo provides the values file
+    - repoURL: https://github.com/kchenfs/TableTap.git
+      targetRevision: k3smigration
+      ref: values
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: monitoring
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+ 
