@@ -38,3 +38,12 @@ grafana:
       url: http://loki.monitoring.svc.cluster.local:3100
       access: proxy
       isDefault: false
+  ingress:
+    enabled: true
+    ingressClassName: traefik
+    annotations:
+      traefik.ingress.kubernetes.io/router.tls: "true"
+      traefik.ingress.kubernetes.io/router.tls.certresolver: "le-prod"
+    hosts:
+      - grafana.momotarosushi.ca
+    path: /
