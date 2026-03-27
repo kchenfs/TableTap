@@ -5,6 +5,7 @@ metadata:
   labels:
     app: tabletap
 spec:
+  revisionHistoryLimit: 2 
   replicas: 2
   selector:
     matchLabels:
@@ -27,7 +28,7 @@ spec:
       containers:
       # --- MAIN CONTAINER (TableTap / Nginx) ---
       - name: tabletap
-        image: ghcr.io/kchenfs/tabletap:1859339d8fe62cf800d4a1e23f8125d8a27f4086
+        image: ghcr.io/kchenfs/tabletap:8beca130e68fa6245d5957048687dccfddbe8cac
         imagePullPolicy: Always
         ports:
         - containerPort: 80

@@ -1,0 +1,18 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: momotaro-backend
+  namespace: argocd
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/kchenfs/TableTap.git
+    targetRevision: k3smigration
+    path: k8s/01-deploy
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: default
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
