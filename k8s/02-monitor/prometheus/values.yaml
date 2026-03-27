@@ -47,3 +47,5 @@ grafana:
     hosts:
       - grafana.momotarosushi.ca
     path: /
+  initChownData:
+    enabled: false
