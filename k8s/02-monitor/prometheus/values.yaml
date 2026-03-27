@@ -1,0 +1,37 @@
+# 1. Disable components that K3s bundles internally
+# If you leave these true, Prometheus will constantly fire "Target Down" alerts
+kubeControllerManager:
+  enabled: false
+kubeScheduler:
+  enabled: false
+kubeProxy:
+  enabled: false
+kubeEtcd:
+  enabled: false
+
+# 2. Configure Prometheus Storage
+prometheus:
+  prometheusSpec:
+    # Tell Prometheus to keep metrics for 14 days
+    retention: 14d
+    # Enable persistent storage so you don't lose metrics if the pod restarts
+    storageSpec:
+      volumeClaimTemplate:
+        spec:
+          storageClassName: local-path
+          accessModes: ["ReadWriteOnce"]
+          resources:
+            requests:
+              storage: 10Gi
+
+# 3. Configure the bundled Grafana
+grafana:
+  adminPassword: "YourSecurePasswordHere" # Set your Grafana login password
+  
+  # Automatically wire up your Loki installation!
+  additionalDataSources:
+    - name: Loki
+      type: loki
+      url: http://loki.monitoring.svc.cluster.local:3100
+      access: proxy
+      isDefault: false
