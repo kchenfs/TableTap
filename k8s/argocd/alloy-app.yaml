@@ -19,7 +19,6 @@ spec:
     - repoURL: https://github.com/kchenfs/TableTap.git
       targetRevision: k3smigration
       ref: values
-      path: .
 
   destination:
     server: https://kubernetes.default.svc
