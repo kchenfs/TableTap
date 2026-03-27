@@ -1,0 +1,33 @@
+# k8s/argocd/prometheus-app.yaml
+# Uses multiple sources:
+#   - Helm chart from prometheus-community repo
+#   - values.yaml from YOUR Git repo
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: prometheus
+  namespace: argocd
+spec:
+  project: default
+  sources:
+    # Source 1: The Helm chart itself (from prometheus-community)
+    - repoURL: https://prometheus-community.github.io/helm-charts
+      chart: kube-prometheus-stack
+      targetRevision: "82.15.0"
+      helm:
+        valueFiles:
+          - $values/k8s/02-monitor/prometheus/values.yaml
+    # Source 2: Your repo (provides the values file above)
+    - repoURL: https://github.com/kchenfs/TableTap.git
+      targetRevision: k3smigration
+      ref: values   
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: monitoring
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+      - ServerSideApply=true   
