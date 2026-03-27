@@ -13,7 +13,8 @@ kubeEtcd:
 prometheus:
   prometheusSpec:
     # Tell Prometheus to keep metrics for 14 days
-    retention: 14d
+    retention: 7d
+    retentionSize: "6GB"
     # Enable persistent storage so you don't lose metrics if the pod restarts
     storageSpec:
       volumeClaimTemplate:
@@ -26,8 +27,10 @@ prometheus:
 
 # 3. Configure the bundled Grafana
 grafana:
-  adminPassword: "YourSecurePasswordHere" # Set your Grafana login password
-  
+  persistence:
+    enabled: true
+    storageClassName: local-path
+    size: 1Gi
   # Automatically wire up your Loki installation!
   additionalDataSources:
     - name: Loki
