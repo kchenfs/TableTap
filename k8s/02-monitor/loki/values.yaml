@@ -40,7 +40,6 @@ loki:
   compactor:
     retention_enabled: true
     delete_request_store: filesystem
-    shared_store: filesystem
     working_directory: /var/loki/compactor
 
 # Single binary pod config
