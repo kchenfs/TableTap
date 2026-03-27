@@ -1,0 +1,33 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: alloy
+  namespace: argocd
+spec:
+  project: default
+
+  sources:
+    # Source 1: Helm chart
+    - repoURL: https://grafana.github.io/helm-charts
+      chart: alloy
+      targetRevision: "1.6.2"
+      helm:
+        valueFiles:
+          - $values/k8s/02-monitor/alloy/values.yaml
+
+    # Source 2: Your repo (values)
+    - repoURL: https://github.com/kchenfs/TableTap.git
+      targetRevision: k3smigration
+      ref: values
+      path: .
+
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: monitoring
+
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
