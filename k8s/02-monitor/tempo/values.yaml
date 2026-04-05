@@ -1,0 +1,7 @@
+# k8s/02-monitor/tempo/values.yaml
+traces:
+  otlp:
+    http:
+      enabled: true
+    grpc:
+      enabled: true

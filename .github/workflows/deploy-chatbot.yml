@@ -9,7 +9,7 @@ on:
       - DONE
     paths:
     - 'dist/**'
-    - '.github/workflows/deploy-chatbot.yml
+    - '.github/workflows/deploy-chatbot.yml'
     - 'src/**'
     
   

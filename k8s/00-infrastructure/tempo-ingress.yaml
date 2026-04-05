@@ -1,0 +1,22 @@
+# k8s/00-infrastructure/tempo-ingress.yaml
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: tempo-ingress
+  namespace: monitoring
+  annotations:
+    traefik.ingress.kubernetes.io/router.tls: "true"
+    traefik.ingress.kubernetes.io/router.tls.certresolver: "le-prod"
+spec:
+  ingressClassName: traefik        
+  rules:
+  - host: traces.momotarosushi.ca
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: tempo
+            port:
+              number: 4318 # The OTLP HTTP Receiver port
