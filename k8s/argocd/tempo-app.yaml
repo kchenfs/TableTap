@@ -10,7 +10,7 @@ spec:
     # Source 1: Tempo Helm chart from the community repo
     - repoURL: https://grafana-community.github.io/helm-charts
       chart: tempo
-      targetRevision: "*" # Or specify the exact version you want
+      targetRevision: "2.0.0" # Or specify the exact version you want
       helm:
         valueFiles:
           - $values/k8s/02-monitor/tempo/values.yaml
