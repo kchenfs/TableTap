@@ -1,22 +1,73 @@
-# k8s/00-infrastructure/tempo-ingress.yaml
-apiVersion: networking.k8s.io/v1
-kind: Ingress
-metadata:
-  name: tempo-ingress
-  namespace: monitoring
-  annotations:
-    traefik.ingress.kubernetes.io/router.tls: "true"
-    traefik.ingress.kubernetes.io/router.tls.certresolver: "le-prod"
-spec:
-  ingressClassName: traefik        
-  rules:
-  - host: traces.momotarosushi.ca
-    http:
-      paths:
-      - path: /
-        pathType: Prefix
-        backend:
-          service:
-            name: tempo
-            port:
-              number: 4318 # The OTLP HTTP Receiver port
+# 1. Disable components that K3s bundles internally
+# If you leave these true, Prometheus will constantly fire "Target Down" alerts
+kubeControllerManager:
+  enabled: false
+kubeScheduler:
+  enabled: false
+kubeProxy:
+  enabled: false
+kubeEtcd:
+  enabled: false
+
+# 2. Configure Prometheus Storage
+prometheus:
+  prometheusSpec:
+    # Tell Prometheus to keep metrics for 7 days
+    retention: 7d
+    retentionSize: "6GB"
+    # Enable persistent storage so you don't lose metrics if the pod restarts
+    storageSpec:
+      volumeClaimTemplate:
+        spec:
+          storageClassName: local-path
+          accessModes: ["ReadWriteOnce"]
+          resources:
+            requests:
+              storage: 10Gi
+
+# 3. Configure the bundled Grafana
+grafana:
+  persistence:
+    enabled: true
+    storageClassName: local-path
+    size: 1Gi
+    
+  # --- CONFIGURE YOUR DATA SOURCES HERE ---
+  additionalDataSources:
+    # Your existing Loki config
+    - name: Loki
+      type: loki
+      url: http://loki.monitoring.svc.cluster.local:3100
+      access: proxy
+      isDefault: false
+      
+    # NEW: Your Tempo config with trace-to-log correlation!
+    - name: Tempo
+      type: tempo
+      uid: tempo
+      url: http://tempo.monitoring.svc.cluster.local:3100
+      access: proxy
+      jsonData:
+        tracesToLogsV2:
+          datasourceUid: 'loki'
+          tags: ['app', 'namespace']
+          filterByTraceID: false
+          filterBySpanID: false
+
+  ingress:
+    enabled: true
+    ingressClassName: traefik
+    annotations:
+      traefik.ingress.kubernetes.io/router.tls: "true"
+      traefik.ingress.kubernetes.io/router.tls.certresolver: "le-prod"
+    hosts:
+      - grafana.momotarosushi.ca
+    path: /
+    
+  # (Fixed the accidental duplicate 'grafana:' key here)
+  initChownData:
+    enabled: false
+  podSecurityContext:
+    runAsUser: 472
+    runAsGroup: 472
+    fsGroup: 472
