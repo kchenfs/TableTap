@@ -3,9 +3,20 @@ tempo:
   receivers:
     otlp:
       protocols:
-        # Explicitly enable the HTTP receiver on port 4318
         http:
           endpoint: 0.0.0.0:4318
-        # Explicitly enable the gRPC receiver on port 4317
         grpc:
           endpoint: 0.0.0.0:4317
+
+# Add this ingress block:
+ingress:
+  enabled: true
+  ingressClassName: traefik
+  annotations:
+    traefik.ingress.kubernetes.io/router.tls: "true"
+    traefik.ingress.kubernetes.io/router.tls.certresolver: "le-prod"
+  hosts:
+    - host: traces.momotarosushi.ca
+      paths:
+        - path: /
+          pathType: Prefix
