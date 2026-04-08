@@ -1,0 +1,29 @@
+# k8s/argocd/tempo-app.yaml
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: tempo
+  namespace: argocd
+spec:
+  project: default
+  sources:
+    # Source 1: Tempo Helm chart from the community repo
+    - repoURL: https://grafana-community.github.io/helm-charts
+      chart: tempo
+      targetRevision: "2.0.0" # Or specify the exact version you want
+      helm:
+        valueFiles:
+          - $values/k8s/02-monitor/tempo/values.yaml
+    # Source 2: Your Git repo provides the values file
+    - repoURL: https://github.com/kchenfs/TableTap.git
+      targetRevision: k3smigration
+      ref: values
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: monitoring
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
