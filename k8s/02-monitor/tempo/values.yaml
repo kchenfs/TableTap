@@ -8,7 +8,6 @@ tempo:
         grpc:
           endpoint: 0.0.0.0:4317
 
-# Add this ingress block:
 ingress:
   enabled: true
   ingressClassName: traefik
@@ -20,3 +19,6 @@ ingress:
       paths:
         - path: /
           pathType: Prefix
+  service:
+    name: tempo
+    port: 4318
