@@ -1,7 +1,11 @@
 # k8s/02-monitor/tempo/values.yaml
-traces:
-  otlp:
-    http:
-      enabled: true
-    grpc:
-      enabled: true
+tempo:
+  receivers:
+    otlp:
+      protocols:
+        # Explicitly enable the HTTP receiver on port 4318
+        http:
+          endpoint: 0.0.0.0:4318
+        # Explicitly enable the gRPC receiver on port 4317
+        grpc:
+          endpoint: 0.0.0.0:4317
